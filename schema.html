@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pretty Fly — Data Relationships</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f1117; color: #e1e4e8; }
+  header { padding: 24px 32px; border-bottom: 1px solid #30363d; }
+  h1 { font-size: 24px; font-weight: 600; }
+  h1 span { color: #58a6ff; }
+  .subtitle { color: #8b949e; margin-top: 4px; font-size: 14px; }
+  .layout { display: flex; height: calc(100vh - 81px); }
+  #network { flex: 1; background: #161b22; }
+  .sidebar { width: 340px; border-left: 1px solid #30363d; overflow-y: auto; padding: 16px; }
+  .sidebar h2 { font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; color: #8b949e; margin-bottom: 12px; }
+  .domain { margin-bottom: 20px; }
+  .domain-title { font-size: 12px; font-weight: 600; color: #58a6ff; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+  .domain .tables { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tag { 
+    display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 12px; cursor: pointer;
+    border: 1px solid #30363d; background: #21262d; color: #c9d1d9; transition: all .15s;
+  }
+  .tag:hover { border-color: #58a6ff; color: #58a6ff; }
+  .tag.highlighted { background: #1f2a3a; border-color: #58a6ff; color: #58a6ff; }
+  .legend { margin-top: 20px; }
+  .legend-item { display: flex; align-items: center; gap: 8px; font-size: 12px; margin-bottom: 6px; color: #8b949e; }
+  .legend-dot { width: 12px; height: 12px; border-radius: 50%; }
+  #detail { margin-top: 16px; padding: 12px; background: #21262d; border-radius: 6px; font-size: 13px; display: none; }
+  #detail h3 { color: #58a6ff; margin-bottom: 8px; }
+  #detail p { color: #8b949e; margin-bottom: 4px; }
+  #detail .cols { margin-top: 8px; color: #c9d1d9; font-size: 11px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Pretty Fly <span>Data Map</span></h1>
+  <p class="subtitle">20 tables · 6 domains · Click any node or tag to explore</p>
+</header>
+
+<div class="layout">
+  <div id="network"></div>
+  <div class="sidebar">
+    <h2>Domains</h2>
+    <div class="domain">
+      <div class="domain-title">📦 Catalogue</div>
+      <div class="tables">
+        <span class="tag" data-node="products">products</span>
+        <span class="tag" data-node="variants">variants</span>
+        <span class="tag" data-node="collections">collections</span>
+        <span class="tag" data-node="product_collections">product_collections</span>
+      </div>
+    </div>
+    <div class="domain">
+      <div class="domain-title">👤 Customers</div>
+      <div class="tables">
+        <span class="tag" data-node="customers">customers</span>
+        <span class="tag" data-node="addresses">addresses</span>
+      </div>
+    </div>
+    <div class="domain">
+      <div class="domain-title">🛒 Orders</div>
+      <div class="tables">
+        <span class="tag" data-node="orders">orders</span>
+        <span class="tag" data-node="line_items">line_items</span>
+        <span class="tag" data-node="discount_codes">discount_codes</span>
+        <span class="tag" data-node="refunds">refunds</span>
+      </div>
+    </div>
+    <div class="domain">
+      <div class="domain-title">🏭 Supply Chain</div>
+      <div class="tables">
+        <span class="tag" data-node="suppliers">suppliers</span>
+        <span class="tag" data-node="purchase_orders">purchase_orders</span>
+        <span class="tag" data-node="po_line_items">po_line_items</span>
+        <span class="tag" data-node="inventory_movements">inventory_movements</span>
+      </div>
+    </div>
+    <div class="domain">
+      <div class="domain-title">📣 Marketing</div>
+      <div class="tables">
+        <span class="tag" data-node="google_ads_daily">google_ads_daily</span>
+        <span class="tag" data-node="meta_ads_daily">meta_ads_daily</span>
+        <span class="tag" data-node="email_campaigns">email_campaigns</span>
+        <span class="tag" data-node="email_events">email_events</span>
+      </div>
+    </div>
+    <div class="domain">
+      <div class="domain-title">🎧 Support</div>
+      <div class="tables">
+        <span class="tag" data-node="support_tickets">support_tickets</span>
+        <span class="tag" data-node="support_messages">support_messages</span>
+      </div>
+    </div>
+    <div class="domain">
+      <div class="domain-title">🏦 Banking</div>
+      <div class="tables">
+        <span class="tag" data-node="bank_transactions">bank_transactions</span>
+      </div>
+    </div>
+
+    <div class="legend">
+      <h2>Legend</h2>
+      <div class="legend-item"><div class="legend-dot" style="background:#58a6ff"></div> Core table (has FK)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#f78166"></div> Transaction/event</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#7ee787"></div> Lookup/reference</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#d2a8ff"></div> Standalone</div>
+    </div>
+    <div id="detail"></div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/vis-network@9.1.6/dist/vis-network.min.js"></script>
+<script>
+const domains = {
+  catalogue:   { color: '#58a6ff', tables: ['products','variants','collections','product_collections'] },
+  customers:   { color: '#7ee787', tables: ['customers','addresses'] },
+  orders:      { color: '#f78166', tables: ['orders','line_items','discount_codes','refunds'] },
+  supply:      { color: '#d2a8ff', tables: ['suppliers','purchase_orders','po_line_items','inventory_movements'] },
+  marketing:   { color: '#ffa657', tables: ['google_ads_daily','meta_ads_daily','email_campaigns','email_events'] },
+  support:     { color: '#f778ba', tables: ['support_tickets','support_messages'] },
+  banking:     { color: '#8b949e', tables: ['bank_transactions'] },
+};
+
+const tableInfo = {
+  products:            { rows:'62',     cols:'product_id, title, product_type, gender_segment, status' },
+  variants:            { rows:'645',    cols:'variant_id, product_id, sku, price, inventory_quantity' },
+  collections:         { rows:'9',      cols:'collection_id, title' },
+  product_collections: { rows:'62',     cols:'product_id, collection_id' },
+  customers:           { rows:'22,440', cols:'customer_id, email, total_spent, acquisition_source, gender_segment_affinity' },
+  addresses:           { rows:'22,440', cols:'customer_id, city, country' },
+  orders:              { rows:'49,793', cols:'order_id, customer_id, created_at, total_price, utm_campaign, discount_code' },
+  line_items:          { rows:'69,956', cols:'line_item_id, order_id, variant_id, quantity, price' },
+  discount_codes:      { rows:'8',      cols:'code, type, value, usage_count' },
+  refunds:             { rows:'5,843',  cols:'refund_id, order_id, created_at, amount, reason' },
+  suppliers:           { rows:'5',      cols:'supplier_id, name, country, currency' },
+  purchase_orders:     { rows:'21',     cols:'po_id, supplier_id, total_cost_gbp, status, deposit_paid_at, balance_paid_at' },
+  po_line_items:       { rows:'645',    cols:'po_line_id, po_id, variant_id, landed_cost_per_unit_gbp' },
+  inventory_movements: { rows:'76,444', cols:'movement_id, variant_id, type, quantity_delta, reference_id' },
+  google_ads_daily:    { rows:'5,110',  cols:'date, campaign_name, spend_gbp, impressions, clicks, conversions' },
+  meta_ads_daily:      { rows:'3,102',  cols:'date, campaign_name, spend_gbp, impressions, clicks, conversions' },
+  email_campaigns:     { rows:'6',      cols:'campaign_id, name, type, recipients, attributed_orders, attributed_revenue_gbp' },
+  email_events:        { rows:'11,368', cols:'event_id, campaign_id, customer_id, event_type' },
+  support_tickets:     { rows:'1,204',  cols:'ticket_id, customer_id, channel, category, related_order_id, resolved_by' },
+  support_messages:    { rows:'1,204 conversations', cols:'ticket_id, messages (JSON array)' },
+  bank_transactions:   { rows:'560',    cols:'transaction_id, date, description, amount_gbp, counterparty, raw_category' },
+};
+
+const nodes = [];
+const edges = [];
+
+Object.entries(domains).forEach(([domain, info]) => {
+  info.tables.forEach(name => {
+    const ti = tableInfo[name] || {};
+    nodes.push({
+      id: name,
+      label: name,
+      title: `${name}\n${ti.rows} rows\n${ti.cols}`,
+      color: { background: info.color, border: '#30363d' },
+      font: { color: '#c9d1d9', size: 13 },
+      shape: 'box',
+      margin: 10,
+    });
+  });
+});
+
+const rels = [
+  ['products','variants','1:N'],
+  ['products','product_collections','N:M'],
+  ['collections','product_collections','N:M'],
+  ['customers','addresses','1:1'],
+  ['customers','orders','1:N'],
+  ['orders','line_items','1:N'],
+  ['orders','refunds','1:N'],
+  ['orders','discount_codes','N:1'],
+  ['line_items','variants','N:1'],
+  ['line_items','products','N:1'],
+  ['suppliers','purchase_orders','1:N'],
+  ['purchase_orders','po_line_items','1:N'],
+  ['po_line_items','variants','N:1'],
+  ['variants','inventory_movements','1:N'],
+  ['inventory_movements','orders','N:1 (sale)'],
+  ['orders','google_ads_daily','N:M'],
+  ['orders','meta_ads_daily','N:M'],
+  ['orders','email_campaigns','N:M'],
+  ['email_campaigns','email_events','1:N'],
+  ['email_events','customers','N:1'],
+  ['support_tickets','customers','N:1'],
+  ['support_tickets','orders','N:1'],
+  ['support_tickets','products','N:1'],
+  ['support_tickets','support_messages','1:N'],
+  ['refunds','bank_transactions','N:M'],
+  ['purchase_orders','bank_transactions','N:M'],
+];
+
+rels.forEach(([from, to, label]) => {
+  edges.push({ from, to, label, font: { color: '#484f58', size: 9, strokeWidth: 0 }, color: { color: '#30363d', opacity: 0.8 }, arrows: 'to', smooth: { type: 'curvedCW', roundness: 0.2 } });
+});
+
+const container = document.getElementById('network');
+const data = { nodes: new vis.DataSet(nodes), edges: new vis.DataSet(edges) };
+const options = {
+  physics: { solver: 'forceAtlas2Based', forceAtlas2Based: { gravitationalConstant: -80, centralGravity: 0.005, springLength: 180, springConstant: 0.08 } },
+  layout: { improvedLayout: true },
+  interaction: { hover: true, tooltipDelay: 100 },
+  edges: { smooth: true },
+};
+
+const network = new vis.Network(container, data, options);
+
+// Click handling
+network.on('click', function(params) {
+  if (params.nodes.length) showDetail(params.nodes[0]);
+});
+document.querySelectorAll('.tag').forEach(tag => {
+  tag.addEventListener('click', () => {
+    showDetail(tag.dataset.node);
+    network.focus(tag.dataset.node, { scale: 1.5, animation: { duration: 500 } });
+  });
+});
+
+function showDetail(nodeId) {
+  const ti = tableInfo[nodeId];
+  if (!ti) return;
+  document.querySelectorAll('.tag').forEach(t => t.classList.remove('highlighted'));
+  document.querySelector(`.tag[data-node="${nodeId}"]`)?.classList.add('highlighted');
+  document.getElementById('detail').style.display = 'block';
+  document.getElementById('detail').innerHTML = `
+    <h3>${nodeId}</h3>
+    <p>Rows: ${ti.rows}</p>
+    <div class="cols">${ti.cols.split(', ').map(c => `<code style="background:#30363d;padding:2px 6px;border-radius:3px;margin:2px;display:inline-block;font-size:11px">${c}</code>`).join(' ')}</div>
+  `;
+}
+</script>
+</body>
+</html>
