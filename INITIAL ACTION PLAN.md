@@ -49,6 +49,27 @@ The project operates on a **fictional 24-month dataset** (June 2024 - May 2026) 
 
 Data integrity is verified by **20 reconciliation rules** (validate.py -- all passing).
 
+## How StockSense Scoring Works
+
+Every one of the 645 variant SKUs gets a **StockSense Score (0-100)** -- a composite of three floating-point sub-scores computed from the data pipeline (`stocksense_data.py`):
+
+| Component | Range | Type | What It Measures |
+|---|---|---|---|
+| **Stock Urgency** | 0.0 - 50.0 | Float | How fast is stock running out? 50 = out of stock now, 0 = >12 months cover |
+| **Demand Intensity (Demand Score)** | 0.0 - 30.0 | Float | How much revenue is at stake? Scaled against the top-selling variant's 12-month volume |
+| **Trend Bonus** | 0.0 - 20.0 | Float | Is demand accelerating? Positive trend = bonus; flat or declining = 0 |
+
+These three floats are summed and rounded to an integer StockSense Score (capped at 0-100). Each variant then gets a status based on score thresholds and inventory levels:
+
+| Status | Criteria | Count |
+|---|---|---|
+| **Reorder** | Out of stock, or <2 months cover with velocity | 361 |
+| **Mark Down** | >12 months cover, or zero velocity with stock on hand | 71 |
+| **Watch** | StockSense Score >= 50 | 69 |
+| **Healthy** | Everything else | 144 |
+
+The **Demand Score** (demand intensity float) is the key number for the prediction model -- it tells us which SKUs carry the most weight and where forecasting accuracy matters most.
+
 ## What's Already Built
 
 | Component | Status | Description |
