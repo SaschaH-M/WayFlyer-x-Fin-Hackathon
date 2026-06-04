@@ -9,3 +9,6 @@ venv/
 dist/
 build/
 .ipynb_checkpoints/
+
+# Next.js build output
+frontend/.next/
