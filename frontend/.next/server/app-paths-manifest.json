@@ -1,0 +1,8 @@
+{
+  "/page": "app/page.js",
+  "/simulator/page": "app/simulator/page.js",
+  "/scenarios/page": "app/scenarios/page.js",
+  "/cashradar/page": "app/cashradar/page.js",
+  "/inventory/page": "app/inventory/page.js",
+  "/chat/page": "app/chat/page.js"
+}

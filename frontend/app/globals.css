@@ -1,0 +1,106 @@
+/* Pretty Fly operator console — theme ported verbatim from the static site. */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:#000; --bg2:rgba(28,28,30,.6); --bg3:rgba(28,28,30,.85);
+  --b:rgba(255,255,255,.06); --bh:rgba(255,255,255,.14);
+  --t:#f5f5f7; --t2:#98989d; --t3:#6e6e73;
+  --bl:#0a84ff; --gr:#30d158; --rd:#ff453a; --am:#ff9f0a; --pu:#bf5af2; --pk:#ff375f;
+  --sidebar:248px;
+}
+
+html, body { background:var(--bg); color:var(--t); }
+body {
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+  -webkit-font-smoothing:antialiased; overflow-x:hidden;
+}
+a { color:inherit; text-decoration:none; }
+::-webkit-scrollbar { width:10px; height:10px; }
+::-webkit-scrollbar-thumb { background:rgba(255,255,255,.08); border-radius:8px; }
+
+.tnum { font-variant-numeric:tabular-nums; }
+
+/* ── App shell ── */
+.shell { display:flex; min-height:100vh; }
+.sidebar {
+  width:var(--sidebar); flex-shrink:0; position:fixed; top:0; bottom:0; left:0;
+  background:rgba(0,0,0,.82); backdrop-filter:saturate(180%) blur(20px);
+  border-right:1px solid var(--b); padding:22px 16px; display:flex; flex-direction:column; gap:6px; z-index:50;
+}
+.brand { font-size:19px; font-weight:800; letter-spacing:-.5px; padding:6px 10px 18px; }
+.brand .ss{color:var(--gr)} .brand .pf{color:var(--bl)}
+.brand .sub { display:block; font-size:10.5px; font-weight:500; color:var(--t3); letter-spacing:.5px; margin-top:4px; }
+.navlink {
+  display:flex; align-items:center; gap:11px; font-size:13.5px; font-weight:500; color:var(--t2);
+  padding:9px 12px; border-radius:11px; border:1px solid transparent; transition:all .15s; cursor:pointer;
+}
+.navlink:hover { color:var(--t); background:rgba(255,255,255,.04); }
+.navlink.active { color:#fff; background:rgba(10,132,255,.16); border-color:rgba(10,132,255,.35); }
+.navlink .ico { width:18px; text-align:center; font-size:15px; }
+.nav-section { font-size:10px; font-weight:700; letter-spacing:1.5px; color:var(--t3); text-transform:uppercase; padding:14px 12px 6px; }
+.side-foot { margin-top:auto; font-size:10.5px; color:var(--t3); line-height:1.5; padding:10px; border-top:1px solid var(--b); }
+.dot { width:7px; height:7px; border-radius:50%; display:inline-block; }
+.dot.live { background:var(--gr); box-shadow:0 0 8px var(--gr); }
+.dot.off { background:var(--t3); }
+
+.main { margin-left:var(--sidebar); flex:1; min-width:0; padding:30px 34px 60px; max-width:1500px; }
+.page-head { margin-bottom:24px; }
+.page-head h1 { font-size:28px; font-weight:800; letter-spacing:-.6px; }
+.page-head p { font-size:13.5px; color:var(--t2); margin-top:6px; max-width:760px; line-height:1.55; }
+.eyebrow { font-size:11px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--bl); margin-bottom:9px; }
+
+/* ── Cards ── */
+.card {
+  background:var(--bg2); border:1px solid var(--b); border-radius:18px; padding:22px;
+  backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
+}
+.card.tight { padding:16px 18px; }
+.grid { display:grid; gap:16px; }
+.cols-4 { grid-template-columns:repeat(4,1fr); }
+.cols-3 { grid-template-columns:repeat(3,1fr); }
+.cols-2 { grid-template-columns:repeat(2,1fr); }
+@media(max-width:1100px){ .cols-4{grid-template-columns:repeat(2,1fr)} .cols-3{grid-template-columns:1fr} }
+
+/* KPI */
+.kpi .lbl { font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:1px; color:var(--t3); margin-bottom:7px; }
+.kpi .val { font-size:30px; font-weight:800; letter-spacing:-1px; line-height:1; }
+.kpi .val.rd{color:var(--rd)} .kpi .val.gr{color:var(--gr)} .kpi .val.am{color:var(--am)} .kpi .val.bl{color:var(--bl)}
+.kpi .sub { font-size:12px; color:var(--t3); margin-top:8px; line-height:1.4; }
+
+/* section title */
+.sec-title { font-size:12px; font-weight:600; color:var(--t3); text-transform:uppercase; letter-spacing:1.5px; margin-bottom:14px; }
+
+/* chips / pills */
+.chip {
+  font-family:inherit; font-size:12px; font-weight:600; padding:7px 14px; border-radius:13px;
+  border:1px solid var(--b); background:transparent; color:var(--t2); cursor:pointer; transition:all .15s; white-space:nowrap;
+}
+.chip:hover { color:var(--t); border-color:var(--bh); }
+.chip.active { background:var(--bl); border-color:var(--bl); color:#fff; }
+.btn { font-family:inherit; font-size:13px; font-weight:600; padding:9px 18px; border-radius:13px; border:1px solid var(--b); background:transparent; color:var(--t); cursor:pointer; transition:all .15s; }
+.btn:hover { background:rgba(255,255,255,.06); border-color:var(--bh); }
+.btn.primary { background:var(--bl); border-color:var(--bl); color:#fff; }
+.btn.primary:hover { background:#0070dc; }
+
+/* status badge */
+.badge { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.6px; padding:3px 9px; border-radius:8px; }
+.badge.reorder { background:rgba(255,69,58,.16); color:var(--rd); }
+.badge.markdown { background:rgba(255,159,10,.16); color:var(--am); }
+.badge.watch { background:rgba(191,90,242,.16); color:var(--pu); }
+.badge.healthy { background:rgba(48,209,88,.16); color:var(--gr); }
+
+/* table */
+.tbl { width:100%; border-collapse:collapse; font-size:13px; }
+.tbl th { text-align:left; font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.8px; color:var(--t3); padding:10px 12px; border-bottom:1px solid var(--b); }
+.tbl td { padding:11px 12px; border-bottom:1px solid var(--b); color:var(--t2); }
+.tbl tr:hover td { background:rgba(255,255,255,.02); }
+.tbl td b { color:var(--t); font-weight:600; }
+
+/* loading */
+.loading { color:var(--t3); font-size:13px; padding:40px; text-align:center; }
+.skel { background:linear-gradient(90deg,rgba(255,255,255,.03),rgba(255,255,255,.07),rgba(255,255,255,.03)); background-size:200% 100%; animation:sk 1.3s infinite; border-radius:12px; }
+@keyframes sk { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+.mono { font-family:'SF Mono',ui-monospace,Menlo,Consolas,monospace; font-size:11px; color:var(--t3); }

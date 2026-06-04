@@ -1,0 +1,22 @@
+{
+  "name": "prettyfly-operator",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3010",
+    "build": "next build",
+    "start": "next start -p 3010"
+  },
+  "dependencies": {
+    "next": "14.2.15",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "chart.js": "4.4.8",
+    "react-chartjs-2": "5.2.0"
+  },
+  "devDependencies": {
+    "typescript": "5.6.3",
+    "@types/react": "18.3.11",
+    "@types/node": "20.16.11"
+  }
+}
