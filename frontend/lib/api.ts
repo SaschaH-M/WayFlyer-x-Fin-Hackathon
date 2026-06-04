@@ -15,6 +15,15 @@ export const api = {
   cashengine: (scenario: string) => get<any>(`/cashengine?scenario=${scenario}`),
   cashengineAll: () => get<any>("/cashengine/all"),
   marketing: () => get<any>("/marketing"),
+  hq: () => get<any>("/hq"),
+  actions: () => get<any>("/actions"),
+  pnl: () => get<any>("/pnl"),
+  sizing: () => get<any>("/sizing"),
+  customers: () => get<any>("/customers"),
+  suppliers: () => get<any>("/suppliers"),
+  support: () => get<any>("/support"),
+  anomaly: () => get<any>("/anomaly"),
+  forecast: () => get<any>("/forecast"),
   agent: async (question: string, use_llm = true) => {
     const r = await fetch("/api/agent", {
       method: "POST",

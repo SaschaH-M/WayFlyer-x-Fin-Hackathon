@@ -2,13 +2,6 @@
 
 Every item below is grounded in a specific finding from the Pretty Fly dataset. ✅ = built in this app.
 
-> **Update:** the whole backlog (7–14) is now built and wired into the **Agent HQ** — a virtual
-> company of 10 AI agents (Aria/Cash, Sten/Inventory, Mira/Marketing, Fin/P&L, Vera/Fit, Cole/Growth,
-> Sam/Supply, Bo/Support, Rex/Risk, Dash/Demand). Every recommendation flows into a **swipe Action
-> Inbox** (approve/skip), the app exposes an **MCP server** (`backend/mcp_server.py`) so any MCP client
-> can drive it, and restocking is now **size-aware** (real size curve). Tagline:
-> *"Run your whole company with an AI workforce that never sleeps."*
-
 ## ✅ Built
 
 1. **Cash Radar** — projects 30 days of cash from known PO schedules + trailing payouts/overheads.

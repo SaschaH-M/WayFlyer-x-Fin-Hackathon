@@ -2,6 +2,7 @@ import "./globals.css";
 import type { Metadata } from "next";
 import Sidebar from "@/components/Sidebar";
 import StoryMode from "@/components/StoryMode";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 export const metadata: Metadata = {
   title: "Pretty Fly · Working Capital OS",
@@ -14,7 +15,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <div className="shell">
           <Sidebar />
-          <main className="main">{children}</main>
+          <main className="main"><ErrorBoundary>{children}</ErrorBoundary></main>
           <StoryMode />
         </div>
       </body>

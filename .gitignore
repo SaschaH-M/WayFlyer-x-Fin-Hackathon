@@ -12,3 +12,4 @@ build/
 
 # Next.js build output
 frontend/.next/
+frontend/node_modules/

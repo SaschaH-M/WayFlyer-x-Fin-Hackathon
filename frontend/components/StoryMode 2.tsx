@@ -5,20 +5,20 @@ import { useRouter } from "next/navigation";
 type Step = { route: string; title: string; caption: string; secs: number };
 
 const STEPS: Step[] = [
-  { route: "/", title: "Meet your AI workforce", secs: 22,
-    caption: "You're the CEO of Pretty Fly. This is your staff — ten AI agents for cash, inventory, marketing, finance, fit, growth, supply, support, risk and demand. Each reads the same live data and tells you what to do." },
-  { route: "/inbox", title: "Run the company in one swipe", secs: 22,
-    caption: "Every recommendation lands here as a card, backed by the data. Swipe right to approve, left to skip. £706k of moves, triaged for you — like Tinder for running your business." },
+  { route: "/", title: "The problem, one screen", secs: 22,
+    caption: "Pretty Fly buys the right products in the wrong quantities. £205k is frozen in overstock while best-sellers sit empty — bleeding £124k every month." },
   { route: "/cashradar", title: "The crisis it saw coming", secs: 26,
-    caption: "Drag the timeline. White is what happened; red dashed is the 30-day forecast from that day. Their worst day was −£274k — called 20 days early from supplier bills the data already knew about." },
-  { route: "/inventory", title: "Every SKU scored & explained", secs: 20,
-    caption: "All 645 products scored 0–100. Tap a card: it shows exactly why, the size curve to reorder, and the sales trend. No black box." },
-  { route: "/marketing", title: "✦ The magic: ads → inventory → cash", secs: 28,
-    caption: "They burn £32k on a 1.5× campaign while TikTok prints £324k for free. And watch the live link: ad demand for Tees jumps while Tees are out of stock → the system auto-flags a reorder before the launch sells out." },
-  { route: "/simulator", title: "The proof", secs: 24,
-    caption: "Trained on months 1–12, replayed the REAL months 13–24. If Pretty Fly had used this, they'd be ~£764k better off — actual revenue vs with-the-tool, measured against what truly happened." },
-  { route: "/chat", title: "And it speaks MCP", secs: 18,
-    caption: "Ask any agent in plain English — answers cite real SKUs, dates and pounds. Wire it into Claude Desktop over MCP and run the whole company from chat." },
+    caption: "Their worst day was −£274k. Our Cash Radar called it 20 days early — from three supplier payments the data already knew about. Then it offers three ways to fix it." },
+  { route: "/inventory", title: "Every SKU, scored & explained", secs: 22,
+    caption: "All 645 products scored 0–100 on urgency, demand and trend. Tap any card and it tells you, in plain English, exactly why — no black box." },
+  { route: "/marketing", title: "Where the money leaks", secs: 28,
+    caption: "They burn £32k on a campaign returning 1.5× (below break-even) while TikTok quietly prints £324k for free. Move the budget → +£101k revenue." },
+  { route: "/marketing", title: "✦ The magic: ads → inventory", secs: 26,
+    caption: "Watch it connect: ad demand for Tees just jumped — but Tees are already out of stock. The system auto-flags a reorder before the launch sells out. Marketing and inventory, talking to each other." },
+  { route: "/simulator", title: "The proof", secs: 26,
+    caption: "We trained on months 1–12, then replayed the REAL months 13–24. If Pretty Fly had used this, they'd be ~£764k better off. Revenue line lifts, measured against what actually happened." },
+  { route: "/chat", title: "Just ask it", secs: 20,
+    caption: "And anyone can drive it — ask a plain question, get an answer that cites real SKUs, dates and pounds." },
 ];
 
 export default function StoryMode() {
