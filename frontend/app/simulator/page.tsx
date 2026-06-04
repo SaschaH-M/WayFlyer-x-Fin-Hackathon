@@ -1,14 +1,41 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import EChart, { axisBase, catAxis, valAxis, C } from "@/components/EChart";
 import { Explainer, HowItWorks, InfoTip } from "@/components/Explain";
 import { api } from "@/lib/api";
 import { gbp, fmtMonth } from "@/lib/format";
+import CountUp from "@/components/CountUp";
+
+// Month-end decision cutoffs the operator can slide between. Index 5 = the
+// canonical month-12 split; earlier cutoffs give the tool less history but a
+// longer test window to prove itself over.
+const CUTOFFS = [
+  { d: "2024-12-31", l: "Dec '24" }, { d: "2025-01-31", l: "Jan '25" }, { d: "2025-02-28", l: "Feb '25" },
+  { d: "2025-03-31", l: "Mar '25" }, { d: "2025-04-30", l: "Apr '25" }, { d: "2025-05-31", l: "May '25" },
+  { d: "2025-06-30", l: "Jun '25" }, { d: "2025-07-31", l: "Jul '25" }, { d: "2025-08-31", l: "Aug '25" },
+  { d: "2025-09-30", l: "Sep '25" }, { d: "2025-10-31", l: "Oct '25" }, { d: "2025-11-30", l: "Nov '25" },
+];
+const DEFAULT_IDX = 5;
 
 export default function Simulator() {
   const [d, setD] = useState<any>(null);
+  const [idx, setIdx] = useState(DEFAULT_IDX);
+  const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
-  useEffect(() => { api.simulate().then(setD).catch((e) => setErr(String(e))); }, []);
+  const reqId = useRef(0);
+
+  // Re-run the backtest live as the cutoff slides — keep the prior view while
+  // recomputing, and let only the latest request land.
+  useEffect(() => {
+    const id = ++reqId.current;
+    setBusy(true);
+    const t = setTimeout(() => {
+      api.simulate(CUTOFFS[idx].d)
+        .then((res) => { if (id === reqId.current) { setD(res); setBusy(false); } })
+        .catch((e) => { if (id === reqId.current) { setErr(String(e)); setBusy(false); } });
+    }, 120);
+    return () => clearTimeout(t);
+  }, [idx]);
 
   if (err) return <div className="loading">Backend unreachable on :5055.<br />{err}</div>;
   if (!d) return <div className="loading">Running the backtest over months 13–24…</div>;
@@ -60,8 +87,23 @@ export default function Simulator() {
     <>
       <div className="page-head">
         <div className="eyebrow">The proof point</div>
-        <h1>If Pretty Fly had used this tool, it would be {gbp(h.total_impact_gbp)} better off.</h1>
-        <p>Trained on months 1–12 only ({d.cutoff} cutoff), then replayed against the <b>real</b> months 13–24 — actual sales, actual stockouts, actual leftover stock. No peeking.</p>
+        <h1>If Pretty Fly had used this tool, it would be <CountUp value={h.total_impact_gbp} format={gbp} /> better off.</h1>
+        <p>Trained on data up to the <b>{CUTOFFS[idx].l}</b> cutoff ({d.cutoff}) only, then replayed against the <b>real</b> months that followed — actual sales, actual stockouts, actual leftover stock. No peeking.</p>
+      </div>
+
+      {/* Draggable decision cutoff — re-runs the whole backtest live */}
+      <div className="card" style={{ marginBottom: 16 }}>
+        <div className="sec-title" style={{ display: "flex", justifyContent: "space-between" }}>
+          <span><span className="live-dot" />Decision cutoff · drag to move the train/test split</span>
+          <span style={{ color: "var(--t3)", letterSpacing: 1 }}>test window: {CUTOFFS[idx].l} → May '26</span>
+        </div>
+        <div className="ctrl-top">
+          <span className="ctrl-lbl">Tool sees data up to</span>
+          <span className="ctrl-val" style={{ color: C.gr }}>{CUTOFFS[idx].l}</span>
+        </div>
+        <input type="range" className="slider" min={0} max={CUTOFFS.length - 1} step={1} value={idx}
+          style={{ ["--pct" as any]: `${(idx / (CUTOFFS.length - 1)) * 100}%`, ["--accent" as any]: C.gr }}
+          onChange={(e) => setIdx(parseInt(e.target.value))} />
       </div>
 
       <Explainer tone="gr">
@@ -70,10 +112,10 @@ export default function Simulator() {
         on top of <b>{gbp(h.cash_freed_gbp)}</b> unlocked from dead stock.
       </Explainer>
 
-      <div className="grid cols-4" style={{ marginBottom: 16 }}>
-        <Kpi lbl="Total impact" val={gbp(h.total_impact_gbp)} cls="gr" sub="cash freed + revenue recovered" />
-        <Kpi lbl="Cash freed" val={gbp(h.cash_freed_gbp)} cls="gr" sub={`${h.markdown_flagged} overstock SKUs cleared`} />
-        <Kpi lbl="Revenue recovered" val={gbp(h.revenue_recovered_gbp)} cls="bl" sub={`${h.stockouts_avoided} stockouts avoided`} />
+      <div className={`grid cols-4 recompute ${busy ? "busy" : ""}`} style={{ marginBottom: 16 }}>
+        <Kpi lbl="Total impact" count={h.total_impact_gbp} cls="gr" sub="cash freed + revenue recovered" />
+        <Kpi lbl="Cash freed" count={h.cash_freed_gbp} cls="gr" sub={`${h.markdown_flagged} overstock SKUs cleared`} />
+        <Kpi lbl="Revenue recovered" count={h.revenue_recovered_gbp} cls="bl" sub={`${h.stockouts_avoided} stockouts avoided`} />
         <Kpi lbl="Prediction precision" val={`${h.reorder_precision_pct}%`} cls="am" subTip="Of the SKUs the tool flagged to reorder, the share that genuinely ran out of stock in the test window. We only count recovered revenue on those — never overclaim." sub={`of ${h.reorder_flagged} reorder flags`} />
       </div>
 
@@ -139,6 +181,6 @@ export default function Simulator() {
   );
 }
 
-function Kpi({ lbl, val, cls, sub, subTip }: any) {
-  return (<div className="card kpi tight"><div className="lbl">{lbl}{subTip && <InfoTip text={subTip} />}</div><div className={`val ${cls} tnum`}>{val}</div><div className="sub">{sub}</div></div>);
+function Kpi({ lbl, val, count, cls, sub, subTip }: any) {
+  return (<div className="card kpi tight"><div className="lbl">{lbl}{subTip && <InfoTip text={subTip} />}</div><div className={`val ${cls} tnum`}>{count != null ? <CountUp value={count} format={gbp} /> : val}</div><div className="sub">{sub}</div></div>);
 }

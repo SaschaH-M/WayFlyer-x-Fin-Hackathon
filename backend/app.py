@@ -69,6 +69,18 @@ def cashengine_all_ep():
     return jsonify(cashengine.all_scenarios())
 
 
+@app.get("/api/cashengine/custom")
+def cashengine_custom_ep():
+    """Live slider-driven what-if: ?discount=&sell_through=&reorder_share= (0–1)."""
+    def f(name, default):
+        try:
+            return float(request.args.get(name, default))
+        except (TypeError, ValueError):
+            return default
+    return jsonify(cashengine.compute_custom(
+        f("discount", 0.30), f("sell_through", 0.70), f("reorder_share", 0.80)))
+
+
 @app.get("/api/marketing")
 def marketing_ep():
     return jsonify(marketing.compute())

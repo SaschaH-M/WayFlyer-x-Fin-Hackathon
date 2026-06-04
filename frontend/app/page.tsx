@@ -4,6 +4,7 @@ import Link from "next/link";
 import { api } from "@/lib/api";
 import { gbp, num, fmtDate } from "@/lib/format";
 import { Explainer } from "@/components/Explain";
+import CountUp from "@/components/CountUp";
 
 export default function Dashboard() {
   const [s, setS] = useState<any>(null);
@@ -43,10 +44,10 @@ export default function Dashboard() {
       </Explainer>
 
       <div className="grid cols-4" style={{ marginBottom: 16 }}>
-        <Kpi lbl="Trapped in overstock" val={gbp(st.total_trapped_cash)} cls="rd" sub={`${st.markdown_count} SKUs · >12 months cover`} />
-        <Kpi lbl="Lost revenue / month" val={gbp(st.lost_monthly_revenue)} cls="am" sub={`${st.reorder_count} SKUs need reordering`} />
-        <Kpi lbl="Worst cash day" val={gbp(cr.actual_nadir_gbp)} cls="rd" sub={`${fmtDate(cr.actual_nadir_date)} · forewarned ${cr.primary_forewarned_days}d`} />
-        <Kpi lbl="Backtest proven impact" val={gbp(bt.total_impact_gbp)} cls="gr" sub={`${bt.stockouts_avoided} stockouts avoided · ${bt.reorder_precision_pct}% precision`} />
+        <Kpi lbl="Trapped in overstock" count={st.total_trapped_cash} cls="rd" sub={`${st.markdown_count} SKUs · >12 months cover`} />
+        <Kpi lbl="Lost revenue / month" count={st.lost_monthly_revenue} cls="am" sub={`${st.reorder_count} SKUs need reordering`} />
+        <Kpi lbl="Worst cash day" count={cr.actual_nadir_gbp} cls="rd" sub={`${fmtDate(cr.actual_nadir_date)} · forewarned ${cr.primary_forewarned_days}d`} />
+        <Kpi lbl="Backtest proven impact" count={bt.total_impact_gbp} cls="gr" sub={`${bt.stockouts_avoided} stockouts avoided · ${bt.reorder_precision_pct}% precision`} />
       </div>
 
       <div className="grid cols-2">
@@ -105,11 +106,11 @@ export default function Dashboard() {
   );
 }
 
-function Kpi({ lbl, val, cls, sub }: any) {
+function Kpi({ lbl, val, count, cls, sub }: any) {
   return (
     <div className="card kpi tight">
       <div className="lbl">{lbl}</div>
-      <div className={`val ${cls || ""} tnum`}>{val}</div>
+      <div className={`val ${cls || ""} tnum`}>{count != null ? <CountUp value={count} format={gbp} /> : val}</div>
       <div className="sub">{sub}</div>
     </div>
   );

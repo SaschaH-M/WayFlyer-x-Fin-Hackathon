@@ -14,6 +14,8 @@ export const api = {
   simulate: (cutoff?: string) => get<any>(`/simulate${cutoff ? `?cutoff=${cutoff}` : ""}`),
   cashengine: (scenario: string) => get<any>(`/cashengine?scenario=${scenario}`),
   cashengineAll: () => get<any>("/cashengine/all"),
+  cashengineCustom: (discount: number, sell_through: number, reorder_share: number) =>
+    get<any>(`/cashengine/custom?discount=${discount}&sell_through=${sell_through}&reorder_share=${reorder_share}`),
   marketing: () => get<any>("/marketing"),
   agent: async (question: string, use_llm = true) => {
     const r = await fetch("/api/agent", {

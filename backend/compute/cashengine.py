@@ -32,10 +32,10 @@ def _revenue_multiplier():
     return round(annual_lost / cost, 2)
 
 
-@lru_cache(maxsize=8)
-def compute(scenario: str = "moderate"):
-    scenario = scenario if scenario in SCENARIOS else "moderate"
-    cfg = SCENARIOS[scenario]
+@lru_cache(maxsize=256)
+def _engine(discount: float, sell_through: float, reorder_share: float):
+    """Core what-if math for an arbitrary strategy. Cached on the rounded knob
+    values so the live sliders stay snappy without recomputing identical points."""
     data = stocksense.compute()
     variants = data["variants"]
     mult = _revenue_multiplier()
@@ -45,9 +45,9 @@ def compute(scenario: str = "moderate"):
                      key=lambda v: -v["stocksense_score"])
 
     trapped_at_cost = sum(v["landed_cost"] * v["inventory"] for v in markdown)
-    freed = sum(v["price"] * v["inventory"] * (1 - cfg["discount"]) * cfg["sell_through"] for v in markdown)
+    freed = sum(v["price"] * v["inventory"] * (1 - discount) * sell_through for v in markdown)
 
-    n_reorder = int(len(reorder) * cfg["reorder_share"])
+    n_reorder = int(len(reorder) * reorder_share)
     reorder_pick = reorder[:n_reorder]
     reorder_invest = sum(v["recommendation_cost"] for v in reorder_pick)
     # revenue uplift from filling those stockouts, capped by what freed cash can fund
@@ -56,9 +56,8 @@ def compute(scenario: str = "moderate"):
     net_cash = round(freed - reorder_invest)
 
     return {
-        "scenario": scenario, "label": cfg["label"], "blurb": cfg["blurb"],
-        "assumptions": {"discount_pct": round(cfg["discount"] * 100), "sell_through_pct": round(cfg["sell_through"] * 100),
-                        "reorder_share_pct": round(cfg["reorder_share"] * 100), "revenue_multiplier": mult},
+        "assumptions": {"discount_pct": round(discount * 100), "sell_through_pct": round(sell_through * 100),
+                        "reorder_share_pct": round(reorder_share * 100), "revenue_multiplier": mult},
         "trapped_cash_gbp": round(trapped_at_cost),
         "freed_cash_gbp": round(freed),
         "reorder_investment_gbp": round(reorder_invest),
@@ -70,6 +69,28 @@ def compute(scenario: str = "moderate"):
         "headline": (f"Free £{round(freed):,} from {len(markdown)} overstock SKUs, fund {len(reorder_pick)} "
                      f"reorders, project £{revenue_uplift:,} in recovered annual revenue."),
     }
+
+
+def compute(scenario: str = "moderate"):
+    scenario = scenario if scenario in SCENARIOS else "moderate"
+    cfg = SCENARIOS[scenario]
+    out = _engine(cfg["discount"], cfg["sell_through"], cfg["reorder_share"])
+    out.update(scenario=scenario, label=cfg["label"], blurb=cfg["blurb"])
+    return out
+
+
+def compute_custom(discount: float, sell_through: float, reorder_share: float):
+    """Live what-if for slider-driven values. Knobs clamped to sane ranges."""
+    discount = round(min(0.60, max(0.0, discount)), 2)
+    sell_through = round(min(1.0, max(0.20, sell_through)), 2)
+    reorder_share = round(min(1.0, max(0.0, reorder_share)), 2)
+    out = _engine(discount, sell_through, reorder_share)
+    nearest = min(SCENARIOS, key=lambda k: abs(SCENARIOS[k]["discount"] - discount)
+                  + abs(SCENARIOS[k]["sell_through"] - sell_through)
+                  + abs(SCENARIOS[k]["reorder_share"] - reorder_share))
+    out.update(scenario="custom", label="Custom mix",
+               blurb=f"Live what-if — closest to the {SCENARIOS[nearest]['label']} preset.")
+    return out
 
 
 def all_scenarios():
