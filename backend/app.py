@@ -21,7 +21,7 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 
 from db import backend_name
-from compute import stocksense, cashradar, simulator, cashengine, marketing
+from compute import stocksense, cashradar, simulator, cashengine, marketing, departments, hq
 import agent
 
 app = Flask(__name__)
@@ -86,6 +86,51 @@ def marketing_ep():
     return jsonify(marketing.compute())
 
 
+@app.get("/api/hq")
+def hq_ep():
+    return jsonify(hq.compute())
+
+
+@app.get("/api/actions")
+def actions_ep():
+    return jsonify({"actions": hq.compute()["actions"]})
+
+
+@app.get("/api/pnl")
+def pnl_ep():
+    return jsonify(departments.pnl())
+
+
+@app.get("/api/sizing")
+def sizing_ep():
+    return jsonify(departments.sizing())
+
+
+@app.get("/api/customers")
+def customers_ep():
+    return jsonify(departments.customers())
+
+
+@app.get("/api/suppliers")
+def suppliers_ep():
+    return jsonify(departments.suppliers())
+
+
+@app.get("/api/support")
+def support_ep():
+    return jsonify(departments.support())
+
+
+@app.get("/api/anomaly")
+def anomaly_ep():
+    return jsonify(departments.anomaly())
+
+
+@app.get("/api/forecast")
+def forecast_ep():
+    return jsonify(departments.forecast())
+
+
 @app.post("/api/agent")
 def agent_ep():
     body = request.get_json(force=True, silent=True) or {}
@@ -98,7 +143,7 @@ def warm():
     """Pre-compute the heavy caches so first requests are instant."""
     print("Warming caches...", flush=True)
     stocksense.compute(); cashradar.compute(); simulator.compute()
-    cashengine.all_scenarios(); marketing.compute()
+    cashengine.all_scenarios(); marketing.compute(); hq.compute()
     print("Caches warm.", flush=True)
 
 

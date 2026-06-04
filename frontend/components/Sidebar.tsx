@@ -5,12 +5,19 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 
 const NAV = [
-  { section: "Operator" },
-  { href: "/", label: "Dashboard", ico: "◎" },
+  { href: "/", label: "Agent HQ", ico: "🏢" },
+  { href: "/inbox", label: "Action Inbox", ico: "⚡" },
+  { section: "Operations" },
   { href: "/cashradar", label: "Cash Radar", ico: "📡" },
   { href: "/inventory", label: "StockSense", ico: "▦" },
   { href: "/scenarios", label: "Cash Engine", ico: "⚖" },
   { href: "/marketing", label: "Marketing", ico: "📣" },
+  { section: "Departments" },
+  { href: "/pnl", label: "Finance · P&L", ico: "⚖" },
+  { href: "/sizing", label: "Fit & Sizing", ico: "📐" },
+  { href: "/customers", label: "Growth · CRM", ico: "📈" },
+  { href: "/suppliers", label: "Supply Chain", ico: "🚢" },
+  { href: "/support", label: "Support", ico: "💬" },
   { section: "Intelligence" },
   { href: "/simulator", label: "Backtest Proof", ico: "⏮" },
   { href: "/chat", label: "WC Agent", ico: "✦" },

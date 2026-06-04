@@ -17,6 +17,15 @@ export const api = {
   cashengineCustom: (discount: number, sell_through: number, reorder_share: number) =>
     get<any>(`/cashengine/custom?discount=${discount}&sell_through=${sell_through}&reorder_share=${reorder_share}`),
   marketing: () => get<any>("/marketing"),
+  hq: () => get<any>("/hq"),
+  actions: () => get<any>("/actions"),
+  pnl: () => get<any>("/pnl"),
+  sizing: () => get<any>("/sizing"),
+  customers: () => get<any>("/customers"),
+  suppliers: () => get<any>("/suppliers"),
+  support: () => get<any>("/support"),
+  anomaly: () => get<any>("/anomaly"),
+  forecast: () => get<any>("/forecast"),
   agent: async (question: string, use_llm = true) => {
     const r = await fetch("/api/agent", {
       method: "POST",

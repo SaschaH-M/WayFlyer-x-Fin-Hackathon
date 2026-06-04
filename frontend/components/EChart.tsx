@@ -1,5 +1,6 @@
 "use client";
 import dynamic from "next/dynamic";
+import ErrorBoundary from "./ErrorBoundary";
 
 const ReactECharts = dynamic(() => import("echarts-for-react"), { ssr: false });
 
@@ -7,6 +8,7 @@ export const C = { bl: "#0a84ff", gr: "#30d158", rd: "#ff453a", am: "#ff9f0a", p
 
 // shared dark-theme axis/grid/tooltip styling for analytical (not marketing) charts
 export const axisBase = {
+  animation: false, // analytical charts; prevents re-animation thrash when scrubbing
   textStyle: { fontFamily: "Inter", color: C.t2 },
   grid: { left: 64, right: 24, top: 28, bottom: 64, containLabel: false },
   tooltip: {
@@ -32,5 +34,9 @@ export const valAxis = (fmt?: (v: number) => string) => ({
 });
 
 export default function EChart({ option, height = 340 }: { option: any; height?: number }) {
-  return <ReactECharts option={option} notMerge lazyUpdate style={{ height, width: "100%" }} opts={{ renderer: "canvas" }} />;
+  return (
+    <ErrorBoundary fallback={<div style={{ height, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--t3)", fontSize: 12 }}>chart updating…</div>}>
+      <ReactECharts option={option} notMerge={false} lazyUpdate style={{ height, width: "100%" }} opts={{ renderer: "canvas" }} />
+    </ErrorBoundary>
+  );
 }

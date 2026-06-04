@@ -1,133 +1,96 @@
 "use client";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { api } from "@/lib/api";
-import { gbp, num, fmtDate } from "@/lib/format";
-import { Explainer } from "@/components/Explain";
-import CountUp from "@/components/CountUp";
+import { gbp } from "@/lib/format";
+import IsoOffice from "@/components/IsoOffice";
 
-export default function Dashboard() {
-  const [s, setS] = useState<any>(null);
-  const [ss, setSs] = useState<any>(null);
-  const [err, setErr] = useState<string>("");
+export default function HQ() {
+  const [d, setD] = useState<any>(null);
+  const [err, setErr] = useState("");
+  const [view, setView] = useState<"floor" | "grid">("floor");
+  const router = useRouter();
+  useEffect(() => { api.hq().then(setD).catch((e) => setErr(String(e))); }, []);
 
-  useEffect(() => {
-    api.summary().then(setS).catch((e) => setErr(String(e)));
-    api.stocksense().then(setSs).catch(() => {});
-  }, []);
+  if (err) return <div className="loading">Backend not reachable on :5055 — run <code>backend/run.sh</code>.<br />{err}</div>;
+  if (!d) return <div className="loading">Waking up your AI workforce…</div>;
 
-  if (err) return <div className="loading">Backend not reachable on :5055 — start it with <code>./backend/run.sh</code><br/>{err}</div>;
-  if (!s) return <Loading />;
-
-  const cr = s.cashradar, st = s.stocksense, eng = s.cashengine, bt = s.backtest;
-  const queue = ss
-    ? [...ss.variants]
-        .filter((v: any) => v.status === "reorder")
-        .sort((a: any, b: any) => (b.inventory <= 0 ? 1 : 0) - (a.inventory <= 0 ? 1 : 0) || b.stocksense_score - a.stocksense_score)
-        .slice(0, 7)
-    : [];
-
+  const c = d.ceo_summary;
   return (
     <>
-      <div className="page-head">
-        <div className="eyebrow">Working Capital OS · live</div>
-        <h1>Pretty Fly is buying the right products in the wrong quantities.</h1>
-        <p>
-          <b style={{ color: "var(--rd)" }}>{gbp(st.total_trapped_cash)}</b> trapped in {st.markdown_count} overstocked
-          SKUs while {st.reorder_count} best-sellers sit empty — bleeding <b style={{ color: "var(--am)" }}>{gbp(st.lost_monthly_revenue)}/month</b>.
-          Free the cash, refill the winners. The backtest below proves it was worth <b style={{ color: "var(--gr)" }}>{gbp(bt.total_impact_gbp)}</b>.
-        </p>
+      <div className="hq-hero">
+        <div className="eyebrow">Pretty Fly · Working Capital OS</div>
+        <h1>You're the CEO. This is your AI staff.</h1>
+        <p className="tag">{d.tagline}</p>
+        <div className="ceo-strip">
+          <M k="Trapped cash" v={gbp(c.trapped_cash)} cls="rd" />
+          <M k="Lost / month" v={gbp(c.lost_monthly)} cls="am" />
+          <M k="Worst cash day" v={gbp(c.nadir)} cls="rd" />
+          <M k="Ad spend leaking" v={gbp(c.ad_leak)} cls="am" />
+          <M k="Proven impact" v={gbp(c.proven_impact)} cls="gr" />
+          <M k="Net margin" v={`${c.net_margin_pct}%`} cls="bl" />
+        </div>
       </div>
 
-      <Explainer>
-        Pretty Fly's money is stuck in the wrong place — too much of some products, none of the best-sellers. This screen shows the size of the problem; the tabs on the left show how to fix it and prove it works.
-      </Explainer>
-
-      <div className="grid cols-4" style={{ marginBottom: 16 }}>
-        <Kpi lbl="Trapped in overstock" count={st.total_trapped_cash} cls="rd" sub={`${st.markdown_count} SKUs · >12 months cover`} />
-        <Kpi lbl="Lost revenue / month" count={st.lost_monthly_revenue} cls="am" sub={`${st.reorder_count} SKUs need reordering`} />
-        <Kpi lbl="Worst cash day" count={cr.actual_nadir_gbp} cls="rd" sub={`${fmtDate(cr.actual_nadir_date)} · forewarned ${cr.primary_forewarned_days}d`} />
-        <Kpi lbl="Backtest proven impact" count={bt.total_impact_gbp} cls="gr" sub={`${bt.stockouts_avoided} stockouts avoided · ${bt.reorder_precision_pct}% precision`} />
-      </div>
-
-      <div className="grid cols-2">
-        {/* Cash position */}
-        <div className="card">
-          <div className="sec-title">Cash position · moderate strategy</div>
-          <div className="grid cols-2" style={{ gap: 12 }}>
-            <Mini lbl="Cash freed by markdowns" val={gbp(eng.freed_cash_gbp)} cls="gr" />
-            <Mini lbl="Reorder investment" val={gbp(eng.reorder_investment_gbp)} cls="bl" />
-            <Mini lbl="Projected revenue uplift" val={gbp(eng.projected_revenue_uplift_gbp)} cls="gr" />
-            <Mini lbl="Net cash position" val={gbp(eng.net_cash_position_gbp)} cls="am" />
+      {/* Today's priorities */}
+      <div className="card" style={{ marginBottom: 22, borderColor: "rgba(10,132,255,.3)" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+          <div>
+            <div className="sec-title" style={{ marginBottom: 6 }}>Today's priorities · {c.open_actions} actions worth {gbp(c.total_action_value)}</div>
+            <div style={{ fontSize: 13, color: "var(--t2)" }}>Your staff drafted {c.open_actions} moves. Review and approve them in one swipe.</div>
           </div>
-          <p style={{ fontSize: 12.5, color: "var(--t2)", marginTop: 14, lineHeight: 1.5 }}>
-            {eng.headline} <span className="mono">£1 freed → £{eng.assumptions.revenue_multiplier} revenue</span>
-          </p>
-          <Link href="/scenarios" className="btn" style={{ marginTop: 14, display: "inline-block" }}>Tune the strategy →</Link>
+          <Link href="/inbox" className="btn primary" style={{ fontSize: 14 }}>Open Action Inbox →</Link>
         </div>
-
-        {/* Recommendation queue */}
-        <div className="card">
-          <div className="sec-title">Recommendation queue · reorder first</div>
-          {queue.length === 0 ? (
-            <div className="skel" style={{ height: 180 }} />
-          ) : (
-            <table className="tbl">
-              <thead><tr><th>SKU</th><th>Status</th><th>Action</th><th style={{ textAlign: "right" }}>Cost</th></tr></thead>
-              <tbody>
-                {queue.map((v: any) => (
-                  <tr key={v.variant_id}>
-                    <td><b>{v.product_name}</b><br /><span className="mono">{v.sku}</span></td>
-                    <td><span className={`badge ${v.inventory <= 0 ? "reorder" : "watch"}`}>{v.inventory <= 0 ? "OUT" : `${v.inventory} left`}</span></td>
-                    <td>{v.recommendation}</td>
-                    <td style={{ textAlign: "right" }}><b>{gbp(v.recommendation_cost)}</b></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-          <Link href="/inventory" className="btn" style={{ marginTop: 14, display: "inline-block" }}>Open StockSense grid →</Link>
+        <div style={{ display: "grid", gap: 8, marginTop: 16 }}>
+          {d.actions.slice(0, 3).map((a: any) => (
+            <Link key={a.id} href="/inbox" style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px",
+              background: "rgba(255,255,255,.025)", border: "1px solid var(--b)", borderRadius: 12 }}>
+              <span className={`badge ${a.severity === "high" ? "reorder" : "watch"}`}>{a.agent}</span>
+              <span style={{ fontSize: 13.5, fontWeight: 600, flex: 1 }}>{a.title}</span>
+              <span style={{ fontSize: 13, color: "var(--gr)", fontWeight: 700 }}>{a.impact_gbp > 0 ? "+" + gbp(a.impact_gbp) : "—"}</span>
+            </Link>
+          ))}
         </div>
       </div>
 
-      <div className="card" style={{ marginTop: 16 }}>
-        <div className="sec-title">The proof · backtest months 13–24</div>
-        <div className="grid cols-3">
-          <Mini lbl="Cash freed (overstock)" val={gbp(bt.cash_freed_gbp)} cls="gr" />
-          <Mini lbl="Revenue recovered (stockouts)" val={gbp(bt.revenue_recovered_gbp)} cls="gr" />
-          <Mini lbl="Stockout-prediction precision" val={`${bt.reorder_precision_pct}%`} cls="bl" />
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, flexWrap: "wrap", gap: 10 }}>
+        <div className="sec-title" style={{ margin: 0 }}>Your office · {d.agents.length} AI agents on the floor</div>
+        <div className="view-toggle">
+          <button className={`chip ${view === "floor" ? "active" : ""}`} onClick={() => setView("floor")}>🏢 Floor</button>
+          <button className={`chip ${view === "grid" ? "active" : ""}`} onClick={() => setView("grid")}>▦ Grid</button>
         </div>
-        <p style={{ fontSize: 12.5, color: "var(--t2)", marginTop: 14, lineHeight: 1.5 }}>
-          Recommendations were made using only months 1–12, then scored against what actually happened in months 13–24.
-          <Link href="/simulator" style={{ color: "var(--bl)" }}> See the full backtest →</Link>
-        </p>
       </div>
+
+      {view === "floor" ? (
+        <IsoOffice agents={d.agents} onPick={(r: string) => router.push(r)} />
+      ) : (
+        <div className="agent-grid">
+          {d.agents.map((a: any) => (
+            <div key={a.id} className="agent-tile" onClick={() => router.push(a.route)}>
+              <div className={`stat-dot ${a.status}`}><span className="d" />{a.status}</div>
+              <div className="agent-av">{a.icon}</div>
+              <div className="nm">{a.name}</div>
+              <div className="rl">{a.role}</div>
+              <div className="mt">{a.metric}</div>
+              <div className="hd">{a.headline}</div>
+              {a.pending > 0
+                ? <div className="pending-pill">⚡ {a.pending} action{a.pending > 1 ? "s" : ""} waiting</div>
+                : <div className="pending-pill" style={{ color: "var(--t3)", background: "rgba(255,255,255,.03)", borderColor: "var(--b)" }}>✓ all clear</div>}
+            </div>
+          ))}
+        </div>
+      )}
+
+      <p style={{ fontSize: 12, color: "var(--t3)", marginTop: 22, lineHeight: 1.6 }}>
+        Every agent reads the same reconciled dataset and surfaces only what's backed by it. Click any agent to see its full
+        workspace, or open the Action Inbox to approve their recommendations. They also speak MCP — wire them into Claude Desktop
+        and run the business from chat.
+      </p>
     </>
   );
 }
 
-function Kpi({ lbl, val, count, cls, sub }: any) {
-  return (
-    <div className="card kpi tight">
-      <div className="lbl">{lbl}</div>
-      <div className={`val ${cls || ""} tnum`}>{count != null ? <CountUp value={count} format={gbp} /> : val}</div>
-      <div className="sub">{sub}</div>
-    </div>
-  );
-}
-function Mini({ lbl, val, cls }: any) {
-  return (
-    <div>
-      <div className="lbl" style={{ fontSize: 10.5, color: "var(--t3)", textTransform: "uppercase", letterSpacing: 1, fontWeight: 600, marginBottom: 5 }}>{lbl}</div>
-      <div className={`val ${cls || ""} tnum`} style={{ fontSize: 24, fontWeight: 800, letterSpacing: -.5, color: cls ? `var(--${cls})` : "var(--t)" }}>{val}</div>
-    </div>
-  );
-}
-function Loading() {
-  return (
-    <>
-      <div className="page-head"><div className="skel" style={{ height: 28, width: 420, marginBottom: 10 }} /><div className="skel" style={{ height: 16, width: 600 }} /></div>
-      <div className="grid cols-4">{[0, 1, 2, 3].map((i) => <div key={i} className="skel" style={{ height: 110 }} />)}</div>
-    </>
-  );
+function M({ k, v, cls }: any) {
+  return (<div className="m"><div className="k">{k}</div><div className="v" style={{ color: `var(--${cls})` }}>{v}</div></div>);
 }

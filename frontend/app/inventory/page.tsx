@@ -5,6 +5,7 @@ import Link from "next/link";
 import { api } from "@/lib/api";
 import { gbp, num } from "@/lib/format";
 import { Explainer, HowItWorks, InfoTip } from "@/components/Explain";
+import EChart, { C } from "@/components/EChart";
 
 const STATUS_LABEL: Record<string, string> = {
   reorder: "Reorder",
@@ -159,7 +160,7 @@ function Inner() {
         </div>
       )}
 
-      <div className="grid" style={{ gridTemplateColumns: "repeat(3,1fr)" }}>
+      <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fill,minmax(280px,1fr))" }}>
         {capped.map((v) => {
           const isOpen = !!open[v.variant_id];
           return (
@@ -204,6 +205,18 @@ function Inner() {
                 <ScoreBar label="Urgency" value={v.score_stock_urgency} max={50} color="rd" />
                 <ScoreBar label="Demand" value={v.score_demand_intensity} max={30} color="am" />
                 <ScoreBar label="Trend" value={v.score_trend_bonus} max={20} color="gr" />
+                {Array.isArray(v.sparkline) && v.sparkline.length > 1 && (
+                  <div style={{ marginTop: 12 }}>
+                    <div style={{ fontSize: 10.5, fontWeight: 600, letterSpacing: 1, textTransform: "uppercase", color: "var(--t3)", marginBottom: 2 }}>Monthly units sold (24 mo)</div>
+                    <EChart height={70} option={{
+                      grid: { left: 4, right: 4, top: 6, bottom: 4 },
+                      xAxis: { type: "category", show: false, data: v.sparkline.map((_: any, i: number) => i) },
+                      yAxis: { type: "value", show: false }, tooltip: { show: false },
+                      series: [{ type: "line", data: v.sparkline, smooth: true, symbol: "none",
+                        lineStyle: { color: C.bl, width: 2 }, areaStyle: { color: "rgba(10,132,255,.12)" } }],
+                    }} />
+                  </div>
+                )}
               </div>
             )}
           </div>
