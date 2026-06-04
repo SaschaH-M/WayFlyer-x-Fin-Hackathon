@@ -11,7 +11,7 @@ import os
 import re
 
 import dataset as ds
-from compute import stocksense, cashengine, simulator, cashradar
+from compute import stocksense, cashengine, simulator, cashradar, marketing
 
 GBP = lambda n: f"£{round(n):,}"
 
@@ -140,6 +140,28 @@ def skill_backtest(_):
     return "\n".join(lines), cites
 
 
+def skill_marketing(_):
+    mk = marketing.compute()
+    meta = mk["meta"]; re = mk["reallocation"]
+    tiktok = next((c for c in mk["channels"] if c["channel"] == "tiktok"), None)
+    lines = [f"**Marketing is leaking money in specific places** (break-even is {meta['break_even_roas']}× at your "
+             f"{meta['gross_margin_pct']}% margin; blended ROAS {meta['blended_roas']}×):\n"]
+    cites = []
+    for c in mk["waste"][:4]:
+        lines.append(f"- ❌ **{c['campaign']}** · {GBP(c['spend'])} spent · {c['roas']}× ROAS — below break-even, losing money.")
+        cites.append({"sku": c["campaign"], "amount": c["spend"], "metric": "wasted spend"})
+    lines.append(f"\n**Winners to feed instead:** " + ", ".join(f"{c['campaign']} ({c['roas']}×)" for c in mk["winners"][:3]) + ".")
+    lines.append(f"\n**Move {GBP(re['rescuable_spend'])}** from the losers to the winners → ~{GBP(re['projected_gain'])} more revenue.")
+    if tiktok:
+        lines.append(f"\n💡 **TikTok** drove {GBP(tiktok['revenue'])} across {tiktok['orders']:,} orders with **zero tracked ad spend** — you're under-invested in a free channel.")
+        cites.append({"sku": "tiktok", "amount": tiktok["revenue"], "metric": "untracked revenue"})
+    hot = [s for s in mk["launch_signals"] if s["severity"] in ("high", "medium")]
+    if hot:
+        s = hot[0]
+        lines.append(f"\n🔗 **Live link:** {s['action']}")
+    return "\n".join(lines), cites
+
+
 def skill_summary(_):
     s = stocksense.compute()["summary"]
     cr = cashradar.compute()["meta"]
@@ -154,6 +176,7 @@ def skill_summary(_):
 
 # order matters — specific intents are checked before broad ones
 INTENTS = [
+    (r"marketing|ad spend|\bads?\b|roas|roi|campaign|channel|tiktok|instagram|facebook|meta|google ads|wasted", skill_marketing),
     (r"supplier|lead[ -]?time|bottleneck", skill_supplier_leadtime),
     (r"crisis|overdraw|overdraft|worst day|nadir|cash radar|negative balance", skill_cash_crisis),
     (r"backtest|prove|proof|simulat|would have|saved", skill_backtest),

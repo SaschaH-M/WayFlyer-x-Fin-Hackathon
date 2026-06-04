@@ -4,6 +4,7 @@ import { Bar } from "react-chartjs-2";
 import { baseOptions, COLORS } from "@/components/charts";
 import { api } from "@/lib/api";
 import { gbp } from "@/lib/format";
+import { Explainer, HowItWorks } from "@/components/Explain";
 
 const SCENARIOS = [
   { key: "conservative", label: "Conservative" },
@@ -61,6 +62,10 @@ export default function Scenarios() {
           working capital and projected revenue.</p>
       </div>
 
+      <Explainer>
+        Same inventory, three appetites. Conservative discounts gently and reorders cautiously; Aggressive clears stock fast and refills everything. Pick one and watch trapped cash turn into working capital and projected revenue.
+      </Explainer>
+
       <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
         {SCENARIOS.map((s) => (
           <button key={s.key} className={selected === s.key ? "chip active" : "chip"}
@@ -91,6 +96,8 @@ export default function Scenarios() {
         <div className="sec-title">Strategy comparison</div>
         <div style={{ height: 320 }}><Bar data={data} options={opts} /></div>
       </div>
+
+      <HowItWorks title="How the cash engine works" steps={[{title:"Freed cash",detail:"For overstock SKUs: units × price × (1 − discount) × sell-through. Deeper discounts clear more units but at lower prices."},{title:"Reorder investment",detail:"Cost to refill the flagged stockout SKUs, scaled by how aggressive the strategy is."},{title:"Revenue uplift",detail:"Freed cash funds reorders; each £1 of freed inventory is worth several pounds of annual revenue, derived from the brand's own sales velocity."},{title:"Net cash",detail:"Freed cash minus reorder investment — the immediate change to the bank balance."}]} />
     </>
   );
 }

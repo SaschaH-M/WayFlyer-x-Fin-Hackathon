@@ -21,7 +21,7 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 
 from db import backend_name
-from compute import stocksense, cashradar, simulator, cashengine
+from compute import stocksense, cashradar, simulator, cashengine, marketing
 import agent
 
 app = Flask(__name__)
@@ -69,6 +69,11 @@ def cashengine_all_ep():
     return jsonify(cashengine.all_scenarios())
 
 
+@app.get("/api/marketing")
+def marketing_ep():
+    return jsonify(marketing.compute())
+
+
 @app.post("/api/agent")
 def agent_ep():
     body = request.get_json(force=True, silent=True) or {}
@@ -81,7 +86,7 @@ def warm():
     """Pre-compute the heavy caches so first requests are instant."""
     print("Warming caches...", flush=True)
     stocksense.compute(); cashradar.compute(); simulator.compute()
-    cashengine.all_scenarios()
+    cashengine.all_scenarios(); marketing.compute()
     print("Caches warm.", flush=True)
 
 

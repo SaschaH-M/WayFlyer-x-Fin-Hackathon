@@ -45,22 +45,27 @@ grounded answer.
 
 ---
 
-## Demo narrative (≈4 min)
+## Demo narrative (3 min — or hit ▶ Play 3-min demo, bottom-right)
 
-1. **Dashboard** — "Pretty Fly buys the right products in the wrong quantities." £205k trapped, £124k/mo
-   bled, worst cash day −£274k. One screen, the whole problem.
-2. **Cash Radar** — scrub to the crisis. The data called −£261k **20 days early** from known PO
-   schedules (Porto Knit £103k, Iberia £34k, Milano £26k — named, exact). Three remedies; Remedy B
-   drills straight into the overstock SKUs.
-3. **StockSense** — 645 SKUs scored 0-100, filterable. Named, specific, defensible recommendations.
-4. **Cash Engine** — toggle conservative / moderate / aggressive. Watch trapped cash convert to
-   working capital and projected revenue (£1 freed → £8 revenue, from the brand's own velocity).
-5. **Backtest Proof** — the kicker. Trained on months 1-12, scored on the **real** months 13-24:
-   **≈£764k** better off (£637k freed + £127k recovered, 206 stockouts avoided). No peeking.
-6. **WC Agent** — ask it anything; every answer cites the data.
+The **Story Mode** button auto-plays this, navigating pages with plain-language captions. Manual order:
 
-**The line:** *"If Pretty Fly had run this from month 12, it would be ~£764,000 better off — and the
-data proves it against what actually happened."*
+1. **Dashboard** — "Right products, wrong quantities." £205k trapped, £124k/mo bled, worst day −£274k.
+2. **Cash Radar** — −£274k crisis called **20 days early** from named POs (Porto Knit £103k, Iberia £34k,
+   Milano £26k). Three remedies; Remedy B drills into the exact overstock SKUs. Now with a "how the
+   projection works" panel — nothing hidden.
+3. **StockSense** — 645 SKUs scored 0-100. **Tap any card** → it shows *why* (urgency + demand + trend bars).
+4. **Marketing** — the new headline. They burn **£32k on a 1.52× campaign** (below the 1.56× break-even) while
+   **TikTok prints £324k for free**. Move the budget → **+£101k**. Then the ✦ magic: ad demand for Tees ▲6.6%
+   while Tees are **out of stock** → the system **auto-flags a 3,352-unit reorder**. Marketing and inventory, talking.
+5. **Backtest Proof** — trained on months 1-12, replayed the **real** 13-24: **≈£764k** better off. The
+   **actual-vs-with-StockSense revenue chart** (ECharts, exact datapoints) shows the lift, with a visible method.
+6. **WC Agent** — ask anything ("where am I wasting ad spend?"); every answer cites real SKU/£/date. Uses
+   Claude when `ANTHROPIC_API_KEY` is set, grounded-offline otherwise.
+
+**The line:** *"It found the cash crisis, the dead stock, AND the ad waste — then proved, against what actually
+happened, that it'd have made Pretty Fly ~£764,000 better off. And a 5-year-old can drive it."*
+
+See `FEATURES.md` for the full data-driven feature backlog (sizing-fit predictor, support auto-resolve, P&L…).
 
 ## Judging fit
 

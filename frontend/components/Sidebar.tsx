@@ -10,6 +10,7 @@ const NAV = [
   { href: "/cashradar", label: "Cash Radar", ico: "📡" },
   { href: "/inventory", label: "StockSense", ico: "▦" },
   { href: "/scenarios", label: "Cash Engine", ico: "⚖" },
+  { href: "/marketing", label: "Marketing", ico: "📣" },
   { section: "Intelligence" },
   { href: "/simulator", label: "Backtest Proof", ico: "⏮" },
   { href: "/chat", label: "WC Agent", ico: "✦" },

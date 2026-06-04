@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { gbp, num, fmtDate } from "@/lib/format";
+import { Explainer } from "@/components/Explain";
 
 export default function Dashboard() {
   const [s, setS] = useState<any>(null);
@@ -36,6 +37,10 @@ export default function Dashboard() {
           Free the cash, refill the winners. The backtest below proves it was worth <b style={{ color: "var(--gr)" }}>{gbp(bt.total_impact_gbp)}</b>.
         </p>
       </div>
+
+      <Explainer>
+        Pretty Fly's money is stuck in the wrong place — too much of some products, none of the best-sellers. This screen shows the size of the problem; the tabs on the left show how to fix it and prove it works.
+      </Explainer>
 
       <div className="grid cols-4" style={{ marginBottom: 16 }}>
         <Kpi lbl="Trapped in overstock" val={gbp(st.total_trapped_cash)} cls="rd" sub={`${st.markdown_count} SKUs · >12 months cover`} />

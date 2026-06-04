@@ -5,6 +5,7 @@ import { Line } from "react-chartjs-2";
 import { baseOptions, COLORS } from "@/components/charts";
 import { api } from "@/lib/api";
 import { gbp, fmtDate } from "@/lib/format";
+import { Explainer, HowItWorks } from "@/components/Explain";
 
 export default function CashRadar() {
   const [d, setD] = useState<any>(null);
@@ -66,6 +67,10 @@ export default function CashRadar() {
           trailing payouts, and trailing overheads.</p>
       </div>
 
+      <Explainer tone="rd">
+        Banks don't warn you before you go overdrawn — this does. It looks at supplier bills the business has already committed to, plus its typical income and costs, and projects the next 30 days of cash. Red line dips below zero = trouble coming.
+      </Explainer>
+
       <div className="grid cols-4" style={{ marginBottom: 16 }}>
         <Kpi lbl="Actual nadir" val={gbp(m.actual_nadir_gbp)} cls="rd" sub={fmtDate(m.actual_nadir_date)} />
         <Kpi lbl="Forewarning" val={`${m.primary_forewarned_days}d`} cls="am" sub={`from ${fmtDate(m.primary_anchor)}`} />
@@ -118,6 +123,8 @@ export default function CashRadar() {
           <div style={{ marginTop: 12, color: "var(--gr)", fontWeight: 600, fontSize: 13 }}>New projected low: {gbp(A.remedies.C.new_min_balance)}</div>
         </div>
       </div>
+
+      <HowItWorks title="How the cash projection works" steps={[{title:"Known outflows",detail:"Scheduled purchase-order payments (deposit + balance) are exact dates and amounts pulled from the data — no guessing."},{title:"Expected income",detail:"Shopify payouts are estimated from the trailing 8-week average, landing on the usual payout days."},{title:"Recurring costs",detail:"Payroll, rent, ads, fulfilment etc. are estimated from the trailing 3 months of actuals, on their usual day of month."},{title:"Only what you'd have known",detail:"Every projection uses only data available on that date — so the 20-day-early warning is real, not hindsight."}]} />
     </>
   );
 }

@@ -63,6 +63,8 @@ def compute(cutoff_str: str = None):
     test_li = li[li["order_id"].isin(test_orders["order_id"])].merge(
         test_orders[["order_id", "created_at"]], on="order_id")
     test_li["month"] = test_li["created_at"].dt.to_period("M")
+    test_li["rev"] = test_li["price"] * test_li["quantity"]
+    actual_rev_by_month = test_li.groupby("month")["rev"].sum().to_dict()
     units_sold_test = test_li.groupby("variant_id")["quantity"].sum().to_dict()
 
     # actual stockout days per variant inside the window (running_balance <= 0)
@@ -148,6 +150,21 @@ def compute(cutoff_str: str = None):
                        "cum_cash_freed": round(cum_freed), "cum_revenue_recovered": round(cum_rec),
                        "cum_total": round(cum_freed + cum_rec)})
 
+    # actual vs with-tool monthly revenue — the honest before/after, exact datapoints
+    revenue_series = []
+    for m in months_sorted:
+        actual = float(actual_rev_by_month.get(pd.Period(m, freq="M"), 0.0))
+        recovered = monthly_recovered[m]
+        revenue_series.append({
+            "month": m,
+            "actual_revenue": round(actual),
+            "with_tool_revenue": round(actual + recovered),
+            "uplift": round(recovered),
+            "uplift_pct": round(recovered / actual * 100, 1) if actual else 0.0,
+        })
+    actual_total = round(sum(r["actual_revenue"] for r in revenue_series))
+    with_tool_total = round(sum(r["with_tool_revenue"] for r in revenue_series))
+
     reorder_recs.sort(key=lambda r: -r["revenue_recovered"])
     markdown_recs.sort(key=lambda r: -r["cash_freed"])
     total_impact = total_freed + total_recovered
@@ -166,6 +183,16 @@ def compute(cutoff_str: str = None):
             "reorder_precision_pct": round(precision * 100, 1),
         },
         "series": series,
+        "revenue_series": revenue_series,
+        "revenue_totals": {"actual": actual_total, "with_tool": with_tool_total,
+                           "uplift": with_tool_total - actual_total},
+        "method_steps": [
+            {"step": 1, "title": "Freeze at month 12", "detail": f"Use only data on/before {cutoff.strftime('%d %b %Y')}. The tool sees nothing past the cutoff."},
+            {"step": 2, "title": "Score every SKU", "detail": "Velocity (90-day trailing) ÷ stock on hand = months of cover. <2 months → REORDER, >12 months → MARK DOWN."},
+            {"step": 3, "title": "Replay reality", "detail": "Step through the actual months 13-24 — real sales, real stockouts, real leftover inventory from the dataset."},
+            {"step": 4, "title": "Measure each call", "detail": "REORDER SKU that truly stocked out → recovered revenue (velocity × weeks out × price × 80% capture). MARK DOWN SKU that stayed overstocked → freed cash."},
+            {"step": 5, "title": "Score honesty", "detail": "Of the SKUs flagged REORDER, what % actually stocked out = precision. Revenue is only counted on SKUs that really ran dry — no overclaiming."},
+        ],
         "top_reorder": reorder_recs[:15],
         "top_markdown": markdown_recs[:15],
         "assumptions": {

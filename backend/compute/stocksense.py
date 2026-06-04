@@ -125,6 +125,12 @@ def compute():
 
         spark = [round(float(x), 1) for x in msp.loc[vid].values.tolist()] if vid in msp.index else []
 
+        # plain-English reasoning — why this score, why this status (no black box)
+        cover_txt = "out of stock" if inv_qty <= 0 else ("∞ months of cover" if months_cover >= 999 else f"{round(months_cover)} months of cover")
+        why = (f"Sells {round(blended,1)}/week, {int(inv_qty)} in stock → {cover_txt}. "
+               f"Score = {round(stock_urgency)} urgency + {round(demand_intensity)} demand"
+               + (f" + {round(trend_bonus)} trend" if trend_bonus > 0 else "") + f" = {score}/100.")
+
         out.append({
             "variant_id": vid, "product_id": pid,
             "product_name": prod["title"], "product_type": prod["product_type"],
@@ -135,6 +141,10 @@ def compute():
             "months_cover": round(float(months_cover), 1) if months_cover < 999 else 999,
             "trend": round(float(trend), 3), "season_factor": round(season_factor, 4),
             "stocksense_score": score, "status": status,
+            "score_stock_urgency": round(float(stock_urgency), 1),
+            "score_demand_intensity": round(float(demand_intensity), 1),
+            "score_trend_bonus": round(float(trend_bonus), 1),
+            "why": why,
             "recommendation": rec, "recommendation_cost": rec_cost,
             "recommendation_detail": rec_detail, "sparkline": spark,
             "margin_pct": round((price - cost) / price * 100, 1) if price > 0 else 0,

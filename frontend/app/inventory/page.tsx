@@ -4,6 +4,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { gbp, num } from "@/lib/format";
+import { Explainer, HowItWorks, InfoTip } from "@/components/Explain";
 
 const STATUS_LABEL: Record<string, string> = {
   reorder: "Reorder",
@@ -42,6 +43,7 @@ function Inner() {
   const [status, setStatus] = useState<string>("all");
   const [ptype, setPtype] = useState<string>("all");
   const [q, setQ] = useState<string>("");
+  const [open, setOpen] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     api.stocksense().then(setData).catch((e) => setErr(String(e)));
@@ -97,6 +99,10 @@ function Inner() {
           rest.
         </p>
       </div>
+
+      <Explainer tone="gr">
+        Every product gets a 0–100 score: how fast it'll run out (urgency), how much money it makes (demand), and whether it's heating up (trend). High score = act now. Tap any card to see exactly why — no black box.
+      </Explainer>
 
       <div className="grid cols-4" style={{ marginBottom: 16 }}>
         <Kpi lbl="Need reordering" val={num(sm.reorder_count)} cls="rd" sub="Best-sellers running empty" />
@@ -154,8 +160,15 @@ function Inner() {
       )}
 
       <div className="grid" style={{ gridTemplateColumns: "repeat(3,1fr)" }}>
-        {capped.map((v) => (
-          <div className="card tight" key={v.variant_id}>
+        {capped.map((v) => {
+          const isOpen = !!open[v.variant_id];
+          return (
+          <div
+            className="card tight"
+            key={v.variant_id}
+            style={{ cursor: "pointer" }}
+            onClick={() => setOpen((o) => ({ ...o, [v.variant_id]: !o[v.variant_id] }))}
+          >
             <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
               <b style={{ fontSize: 14, lineHeight: 1.3 }}>{v.product_name}</b>
               <span className={`badge ${v.status}`}>{STATUS_LABEL[v.status] || v.status}</span>
@@ -163,7 +176,7 @@ function Inner() {
             <div className="mono" style={{ marginTop: 4 }}>{v.sku}</div>
 
             <div className="grid" style={{ gridTemplateColumns: "repeat(2,1fr)", gap: 8, marginTop: 14 }}>
-              <Stat lbl="Score" val={`${v.stocksense_score}/100`} />
+              <Stat lbl={<>Score<InfoTip text="0–100: urgency to act. 50 from stockout risk + 30 from revenue + 20 from rising trend." /></>} val={`${v.stocksense_score}/100`} />
               <Stat lbl="Inventory" val={num(v.inventory)} />
               <Stat lbl="Cover" val={v.months_cover === 999 ? "∞" : `${v.months_cover}m`} />
               <Stat lbl="Velocity" val={`${v.velocity_weekly}/wk`} />
@@ -177,13 +190,32 @@ function Inner() {
                 <span style={{ color: "var(--t)", fontWeight: 600 }}> · {gbp(v.recommendation_cost)}</span>
               )}
             </div>
+
+            <div style={{ marginTop: 12, fontSize: 11, fontWeight: 700, color: "var(--t3)", display: "flex", alignItems: "center", gap: 6 }}>
+              <span>{isOpen ? "▾" : "▸"}</span>
+              {isOpen ? "Hide breakdown" : "Why this score?"}
+            </div>
+
+            {isOpen && (
+              <div style={{ marginTop: 12 }}>
+                {v.why && (
+                  <div style={{ fontSize: 12.5, color: "var(--t2)", fontStyle: "italic", lineHeight: 1.5, marginBottom: 12 }}>{v.why}</div>
+                )}
+                <ScoreBar label="Urgency" value={v.score_stock_urgency} max={50} color="rd" />
+                <ScoreBar label="Demand" value={v.score_demand_intensity} max={30} color="am" />
+                <ScoreBar label="Trend" value={v.score_trend_bonus} max={20} color="gr" />
+              </div>
+            )}
           </div>
-        ))}
+          );
+        })}
       </div>
 
       {overflow > 0 && (
         <div className="loading">+ {num(overflow)} more — refine filters</div>
       )}
+
+      <HowItWorks title="How the StockSense score works" steps={[{title:"Stock urgency (0–50)",detail:"How many months of stock are left at the current sales rate. Out of stock = 50 (max urgency); over 12 months of cover = 0."},{title:"Demand intensity (0–30)",detail:"How much this SKU sells versus the best-seller over the last 12 months. Bigger sellers score higher — protect the revenue that matters."},{title:"Trend bonus (0–20)",detail:"Is it accelerating? Recent 3-month velocity vs the 12-month average. Heating up earns a bonus so you reorder before it spikes."},{title:"Status",detail:"Out of stock or <2 months cover → Reorder. Over 12 months cover → Mark Down. Score ≥50 → Watch. Otherwise Healthy."}]} />
     </>
   );
 }
@@ -203,6 +235,20 @@ function Stat({ lbl, val }: any) {
     <div>
       <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.8, color: "var(--t3)", marginBottom: 3 }}>{lbl}</div>
       <div className="tnum" style={{ fontSize: 14, fontWeight: 700, color: "var(--t)" }}>{val}</div>
+    </div>
+  );
+}
+
+function ScoreBar({ label, value, max, color }: { label: string; value: number; max: number; color: string }) {
+  const v = Number(value) || 0;
+  const pct = Math.max(0, Math.min(100, (v / max) * 100));
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+      <div style={{ width: 56, flexShrink: 0, fontSize: 11, fontWeight: 600, color: "var(--t3)" }}>{label}</div>
+      <div style={{ flex: 1, background: "rgba(255,255,255,.06)", height: 6, borderRadius: 3, overflow: "hidden" }}>
+        <div style={{ width: `${pct}%`, height: "100%", background: `var(--${color})`, borderRadius: 3 }} />
+      </div>
+      <div className="tnum" style={{ width: 40, flexShrink: 0, textAlign: "right", fontSize: 11, fontWeight: 700, color: "var(--t2)" }}>{v}/{max}</div>
     </div>
   );
 }

@@ -1,8 +1,9 @@
 {
-  "/page": "app/page.js",
+  "/chat/page": "app/chat/page.js",
   "/simulator/page": "app/simulator/page.js",
-  "/scenarios/page": "app/scenarios/page.js",
-  "/cashradar/page": "app/cashradar/page.js",
+  "/marketing/page": "app/marketing/page.js",
+  "/page": "app/page.js",
   "/inventory/page": "app/inventory/page.js",
-  "/chat/page": "app/chat/page.js"
+  "/cashradar/page": "app/cashradar/page.js",
+  "/scenarios/page": "app/scenarios/page.js"
 }
