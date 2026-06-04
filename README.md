@@ -1,53 +1,57 @@
 # Pretty Fly — Cash Radar + StockSense
 
-A cash flow projector and inventory triage tool for DTC brands. No ML. No backend. No excuses.
+Pretty Fly went −£274,113.93 overdrawn on 3 September 2024. Three PO balance payments — Porto Knit £103k, Iberia £34k, Milano £26k — landed on 2 Sep while Shopify payouts were weekly and slow. The data knew from June. No tool was watching.
+
+A projection run from 14 August 2024 calls −£261,435 on the same day. 20 days early. 95% accurate. No ML — known PO schedules, trailing Shopify payouts, trailing opex.
 
 ---
 
-## The finding
+## Cash Radar
 
-On 3 September 2024, Pretty Fly's bank balance hit −£274,113.93. Their worst day in two years. Three purchase order balance payments landed on the same morning — £163k out the door at once. Those POs were placed in June and July. The information was sitting in the data the whole time.
+Scrubs through 24 months of bank history. At any point in the timeline, projects cash 30 days forward using only what the operator could have known that day: scheduled PO payments, trailing payouts, trailing overheads.
 
-Our projection, run from 14 August 2024, forecast −£261,435 on the same day. 20 days early, 95% accurate. No machine learning. Just known PO schedules, trailing Shopify payouts, and trailing opex.
+On a danger window, shows the exact cause — named POs, named amounts — and three remedies:
 
-That's the product.
+**Remedy A** — Delay Porto Knit balance 21 days. New cash low: −£158k. Costs nothing.  
+**Remedy B** — Discount 26 overstock SKUs at 30% off, 70% sell-through. Frees £287,762. New low: −£80k. Opens StockSense pre-filtered to those exact SKUs.  
+**Remedy C** — Wayflyer £281k bridge, 90 days, fee £16,629. Shown as the most expensive option. The last resort, not the first pitch.
 
----
-
-## What it does
-
-**Cash Radar** (`index.html`) scrubs through 24 months of bank history. At any point in the timeline it projects the next 30 days using scheduled PO payments, trailing payouts, and opex. When it detects a danger window it fires an alert and offers three honestly-costed remedies:
-
-- Remedy A: delay the largest PO balance. Costs nothing. One supplier email.
-- Remedy B: discount overstock to free trapped cash. Opens StockSense pre-filtered to the exact SKUs.
-- Remedy C: Wayflyer bridge financing. Real fee shown (£16,629 on a £281k 90-day bridge). The last resort, labelled honestly.
-
-**StockSense** (`stocksense.html`) scores every variant by days-of-cover, reorder urgency, and margin. It stands alone, and it wires directly into Remedy B — click through from the alert and you land on the overstock candidates ready to act on.
+`?apply=A`, `?apply=B`, `?apply=C` URL params auto-apply a remedy on load.
 
 ---
 
-## How it's built
+## StockSense
 
-Static site. Python + pandas pipeline pre-computes two JS data files. Vanilla JS and Chart.js render everything in the browser. All 20 validate.py reconciliation rules pass. Works from `file://` — if the Wi-Fi dies on stage, we demo from a USB stick.
+645 variants scored across days-of-cover and margin: **Reorder Now / Watch / Healthy / Mark Down**.
+
+Classic Hoodie Washed Black M — 44 months of cover. Relaxed Hoodie Burgundy M — 36 months. Named, specific, defensible.
+
+Connects from Cash Radar Remedy B — opens pre-filtered to the exact overstock SKUs that free the cash.
+
+---
+
+## Data
+
+Six tables: `bank_transactions.csv`, `purchase_orders.csv`, `po_line_items.csv`, `inventory_movements.csv`, `variants.csv`, `products.csv`. Focused build, not a broad one.
 
 ---
 
 ## GDPR
 
-All data is aggregated at the SKU and transaction level. No personal customer data — no names, emails, or addresses — is ingested, stored, or displayed anywhere in the product. GDPR-clean by design.
-
----
-
-## Sponsor note
-
-Wayflyer is Remedy C. Not the hero — the honest last resort. Cash Radar earns trust by showing you the cheaper options first, which is exactly when Remedy C lands. A founder who trusts the tool will reach for the financing when it's genuinely the right call.
+All customer data in the source files is synthetic. The tool operates at SKU and transaction level only — no personal data is ingested, processed, or displayed. GDPR-clean by design.
 
 ---
 
 ## Running it
 
+Static site. No backend, no login, no API keys.
+
 ```
-open index.html
+python -m http.server 8765
 ```
 
-Or, if you want a proper server: `python -m http.server 8765`, then `localhost:8765`.
+Open `http://127.0.0.1:8765/index.html`. Or open `index.html` directly from `file://` — works offline.
+
+---
+
+One email to a supplier, sent 20 days earlier, would have cut that overdraft by £116k. The data was there. Nobody was looking.
