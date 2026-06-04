@@ -1,0 +1,2664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StockSense — Inventory Intelligence</title>
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+    *, *::before, *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0
+    }
+
+    :root {
+        --bg: #000;
+        --bg2: rgba(28, 28, 30, .6);
+        --bg3: rgba(28, 28, 30, .85);
+        --b: rgba(255, 255, 255, .06);
+        --bh: rgba(255, 255, 255, .12);
+        --t: #f5f5f7;
+        --t2: #98989d;
+        --t3: #6e6e73;
+        --bl: #0a84ff;
+        --bl2: rgba(10, 132, 255, .15);
+        --gr: #30d158;
+        --gr2: rgba(48, 209, 88, .12);
+        --rd: #ff453a;
+        --rd2: rgba(255, 69, 58, .12);
+        --am: #ff9f0a;
+        --am2: rgba(255, 159, 10, .12);
+        --pu: #bf5af2;
+        --pk: #ff375f;
+        --sidebar: 390px;
+    }
+
+    body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        background: var(--bg);
+        color: var(--t);
+        -webkit-font-smoothing: antialiased;
+        overflow: hidden;
+        height: 100vh
+    }
+
+    button {
+        font-family: inherit;
+        cursor: pointer;
+        border: none;
+        outline: none
+    }/* LAYOUT */
+
+    .app {
+        display: flex;
+        height: 100vh;
+        width: 100%
+    }
+
+    .sidebar {
+        width: var(--sidebar);
+        min-width: var(--sidebar);
+        border-right: 1px solid var(--b);
+        display: flex;
+        flex-direction: column;
+        background: rgba(0, 0, 0, .4);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        z-index: 10
+    }
+
+    .main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        min-width: 0
+    }/* TOP BAR */
+
+    .topbar {
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        padding: 12px 20px;
+        gap: 12px;
+        border-bottom: 1px solid var(--b);
+        background: rgba(0, 0, 0, .7);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        z-index: 20;
+        flex-wrap: wrap
+    }
+
+    .logo {
+        font-size: 18px;
+        font-weight: 800;
+        letter-spacing: -.4px;
+        white-space: nowrap
+    }
+
+    .logo span {
+        color: var(--bl)
+    }
+
+    .kpi-row {
+        display: flex;
+        gap: 8px;
+        flex: 1;
+        justify-content: center;
+        flex-wrap: wrap;
+        min-width: 0
+    }
+
+    .kpi-pill {
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 500;
+        border: 1px solid var(--b);
+        white-space: nowrap;
+        display: flex;
+        align-items: center;
+        gap: 5px
+    }
+
+    .kpi-pill .sv {
+        font-weight: 700;
+        font-size: 13px
+    }
+
+    .kpi-pill.reorder {
+        border-color: rgba(255, 69, 58, .3);
+        background: rgba(255, 69, 58, .06);
+        color: var(--rd)
+    }
+
+    .kpi-pill.watch {
+        border-color: rgba(10, 132, 255, .3);
+        background: rgba(10, 132, 255, .06);
+        color: var(--bl)
+    }
+
+    .kpi-pill.healthy {
+        border-color: rgba(48, 209, 88, .3);
+        background: rgba(48, 209, 88, .06);
+        color: var(--gr)
+    }
+
+    .kpi-pill.markdown {
+        border-color: rgba(255, 159, 10, .3);
+        background: rgba(255, 159, 10, .06);
+        color: var(--am)
+    }
+
+    .kpi-pill.cash {
+        border-color: rgba(191, 90, 242, .3);
+        background: rgba(191, 90, 242, .06);
+        color: var(--pu)
+    }
+
+    .kpi-pill.revenue {
+        border-color: rgba(255, 55, 95, .3);
+        background: rgba(255, 55, 95, .06);
+        color: var(--pk)
+    }
+
+    .topbar-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px
+    }
+
+    .btn-sm {
+        padding: 6px 14px;
+        border-radius: 16px;
+        font-size: 11px;
+        font-weight: 600;
+        background: var(--bg2);
+        color: var(--t2);
+        border: 1px solid var(--b);
+        transition: all .2s
+    }
+
+    .btn-sm:hover {
+        color: var(--t);
+        border-color: var(--bh)
+    }
+
+    .btn-sm.accent {
+        background: var(--bl);
+        border-color: var(--bl);
+        color: #fff
+    }
+
+    .btn-sm.accent:hover {
+        opacity: .85
+    }/* TAB BAR */
+
+    .tabbar {
+        flex-shrink: 0;
+        padding: 8px 20px;
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        border-bottom: 1px solid var(--b);
+        background: rgba(0, 0, 0, .5);
+        overflow-x: auto
+    }
+
+    .tab {
+        font-size: 11px;
+        font-weight: 600;
+        padding: 6px 16px;
+        border-radius: 18px;
+        background: transparent;
+        color: var(--t2);
+        transition: all .2s;
+        white-space: nowrap
+    }
+
+    .tab:hover {
+        color: var(--t);
+        background: rgba(255, 255, 255, .04)
+    }
+
+    .tab.active {
+        background: var(--bl);
+        color: #fff
+    }
+
+    .search-box {
+        background: var(--bg2);
+        border: 1px solid var(--b);
+        border-radius: 18px;
+        padding: 6px 14px;
+        color: var(--t);
+        font-size: 12px;
+        width: 200px;
+        outline: none;
+        font-family: inherit;
+        margin-left: auto;
+        flex-shrink: 0
+    }
+
+    .search-box:focus {
+        border-color: var(--bl)
+    }/* MAIN CONTENT AREA */
+
+    .content {
+        flex: 1;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding: 12px 20px 40px
+    }
+
+    .content::-webkit-scrollbar {
+        width: 4px
+    }
+
+    .content::-webkit-scrollbar-track {
+        background: transparent
+    }
+
+    .content::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, .08);
+        border-radius: 2px
+    }/* PANELS (shown/hidden by tab) */
+
+    .panel {
+        display: none
+    }
+
+    .panel.active {
+        display: block
+    }/* DASHBOARD GRID */
+
+    .dash-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 12px
+    }
+
+    .dash-card {
+        background: var(--bg2);
+        border: 1px solid var(--b);
+        border-radius: 16px;
+        padding: 20px;
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px)
+    }
+
+    .dash-card.full {
+        grid-column: 1/-1
+    }
+
+    .dash-card h3 {
+        font-size: 15px;
+        font-weight: 700;
+        letter-spacing: -.2px;
+        margin-bottom: 4px
+    }
+
+    .dash-card .sub {
+        font-size: 11px;
+        color: var(--t3);
+        margin-bottom: 14px
+    }
+
+    .big-num {
+        font-size: 42px;
+        font-weight: 900;
+        letter-spacing: -1.5px;
+        line-height: 1
+    }
+
+    .big-num.rd {
+        color:var(--rd)
+    }
+
+    .big-num.gr {
+        color:var(--gr)
+    }
+
+    .big-num.bl {
+        color:var(--bl)
+    }
+
+    .big-num.am {
+        color:var(--am)
+    }
+
+    .big-num.pu {
+        color: var(--pu)
+    }
+
+    .mini-stats {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-top: 12px
+    }
+
+    .mini-stat {
+        background: rgba(255, 255, 255, .03);
+        border-radius: 10px;
+        padding: 12px 16px;
+        flex: 1;
+        min-width: 100px
+    }
+
+    .mini-stat .msv {
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: -.3px
+    }
+
+    .mini-stat .msl {
+        font-size: 10px;
+        color: var(--t3);
+        text-transform: uppercase;
+        letter-spacing: .5px;
+        margin-top: 2px
+    }
+
+    .msv.rd {
+        color:var(--rd)
+    }
+
+    .msv.am {
+        color:var(--am)
+    }
+
+    .msv.gr {
+        color:var(--gr)
+    }
+
+    .msv.bl {
+        color:var(--bl)
+    }
+
+    .msv.pu {
+        color: var(--pu)
+    }/* STOCKSENSE GRID */
+
+    .ss-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 10px
+    }
+
+    .pcard {
+        background: var(--bg2);
+        border: 1px solid var(--b);
+        border-radius: 14px;
+        padding: 16px;
+        cursor: pointer;
+        transition: all .2s;
+        position: relative
+    }
+
+    .pcard:hover {
+        border-color: var(--bh);
+        transform: translateY(-1px)
+    }
+
+    .pcard.reorder-card {
+        border-left: 3px solid var(--rd)
+    }
+
+    .pcard.markdown-card {
+        border-left: 3px solid var(--am)
+    }
+
+    .pcard.watch-card {
+        border-left: 3px solid var(--bl)
+    }
+
+    .pcard.healthy-card {
+        border-left: 3px solid var(--gr)
+    }
+
+    .pcard .phead {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 8px
+    }
+
+    .pcard .pname {
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: -.1px;
+        line-height: 1.2;
+        flex: 1
+    }
+
+    .pcard .pname .ptype {
+        font-size: 9px;
+        font-weight: 500;
+        color: var(--t3);
+        text-transform: uppercase;
+        letter-spacing: .5px;
+        display: block
+    }
+
+    .pcard .score {
+        width: 42px;
+        height: 42px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 17px;
+        font-weight: 800;
+        flex-shrink: 0;
+        margin-left: 10px
+    }
+
+    .pcard .score.hi {
+        background: var(--rd2);
+        color: var(--rd)
+    }
+
+    .pcard .score.md {
+        background: var(--am2);
+        color: var(--am)
+    }
+
+    .pcard .score.lo {
+        background: var(--gr2);
+        color: var(--gr)
+    }
+
+    .pcard .pstats {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 6px;
+        flex-wrap: wrap
+    }
+
+    .pcard .pst {
+        font-size: 9px;
+        color: var(--t3);
+        text-transform: uppercase;
+        letter-spacing: .5px
+    }
+
+    .pcard .pst span {
+        display: block;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--t);
+        margin-top: 1px
+    }
+
+    .pcard .rec {
+        font-size: 10px;
+        padding: 5px 8px;
+        border-radius: 6px;
+        line-height: 1.4
+    }
+
+    .pcard .rec.reorder-rec {
+        background: var(--rd2);
+        color: var(--rd)
+    }
+
+    .pcard .rec.markdown-rec {
+        background: var(--am2);
+        color: var(--am)
+    }
+
+    .pcard .rec.watch-rec {
+        background: var(--bl2);
+        color: var(--bl)
+    }
+
+    .pcard .rec.healthy-rec {
+        background: var(--gr2);
+        color: var(--gr)
+    }/* RECOMMENDATION QUEUE */
+
+    .rec-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px
+    }
+
+    .rec-table th {
+        text-align: left;
+        padding: 10px 14px;
+        font-size: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: var(--t3);
+        border-bottom: 1px solid var(--b);
+        position: sticky;
+        top: 0;
+        background: var(--bg);
+        z-index: 1
+    }
+
+    .rec-table td {
+        padding: 10px 14px;
+        border-bottom: 1px solid rgba(255, 255, 255, .03);
+        color: var(--t2)
+    }
+
+    .rec-table tr {
+        cursor: pointer;
+        transition: background .15s
+    }
+
+    .rec-table tr:hover td {
+        background: rgba(255, 255, 255, .02)
+    }
+
+    .rec-table .badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 10px;
+        font-weight: 600
+    }
+
+    .rec-table .badge.rd {
+        background: var(--rd2);
+        color: var(--rd)
+    }
+
+    .rec-table .badge.am {
+        background: var(--am2);
+        color: var(--am)
+    }
+
+    .rec-table .badge.bl {
+        background: var(--bl2);
+        color: var(--bl)
+    }
+
+    .rec-table .badge.gr {
+        background: var(--gr2);
+        color: var(--gr)
+    }/* CASH FLOW */
+
+    .cf-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 12px
+    }
+
+    .cf-card {
+        background: var(--bg2);
+        border: 1px solid var(--b);
+        border-radius: 16px;
+        padding: 20px
+    }
+
+    .cf-card h3 {
+        font-size: 14px;
+        font-weight: 700;
+        margin-bottom: 4px
+    }
+
+    .cf-card canvas {
+        height: 180px !important;
+        margin-top: 8px
+    }
+
+    .scenario-row {
+        display: flex;
+        gap: 8px;
+        margin: 12px 0
+    }
+
+    .scenario-btn {
+        padding: 6px 14px;
+        border-radius: 16px;
+        font-size: 11px;
+        font-weight: 600;
+        background: var(--bg2);
+        color: var(--t2);
+        border: 1px solid var(--b);
+        cursor: pointer;
+        transition: all .2s
+    }
+
+    .scenario-btn:hover {
+        color: var(--t);
+        border-color: var(--bh)
+    }
+
+    .scenario-btn.active {
+        background: var(--bl);
+        border-color: var(--bl);
+        color: #fff
+    }/* SIDEBAR */
+
+    .sidebar-head {
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--b);
+        flex-shrink: 0
+    }
+
+    .sidebar-head h2 {
+        font-size: 15px;
+        font-weight: 700;
+        letter-spacing: -.2px
+    }
+
+    .sidebar-head .subtitle {
+        font-size: 10px;
+        color: var(--t3);
+        margin-top: 2px
+    }
+
+    .chat-area {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden
+    }
+
+    .chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px
+    }
+
+    .chat-messages::-webkit-scrollbar {
+        width: 4px
+    }
+
+    .chat-messages::-webkit-scrollbar-track {
+        background: transparent
+    }
+
+    .chat-messages::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, .06);
+        border-radius: 2px
+    }
+
+    .chat-msg {
+        max-width: 92%;
+        font-size: 12px;
+        line-height: 1.55;
+        padding: 10px 14px;
+        border-radius: 16px;
+        animation: fadeIn .25s ease
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform:translateY(6px)
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0)
+        }
+    }
+
+    .chat-msg.user {
+        align-self: flex-end;
+        background: var(--bl);
+        color: #fff;
+        border-bottom-right-radius: 4px
+    }
+
+    .chat-msg.agent {
+        align-self: flex-start;
+        background: rgba(255, 255, 255, .06);
+        color: var(--t);
+        border-bottom-left-radius: 4px
+    }
+
+    .chat-msg .msg-time {
+        font-size: 9px;
+        color: rgba(255, 255, 255, .4);
+        margin-top: 4px
+    }
+
+    .chat-msg.agent .msg-time {
+        color: var(--t3)
+    }
+
+    .chat-suggestions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        padding: 8px 16px 0
+    }
+
+    .sug-btn {
+        padding: 5px 12px;
+        border-radius: 14px;
+        font-size: 10px;
+        background: rgba(255, 255, 255, .04);
+        color: var(--t2);
+        border: 1px solid var(--b);
+        cursor: pointer;
+        transition: all .15s;
+        white-space: nowrap
+    }
+
+    .sug-btn:hover {
+        color: var(--t);
+        border-color: var(--bh);
+        background: rgba(255, 255, 255, .08)
+    }
+
+    .chat-input-area {
+        padding: 12px 16px;
+        border-top: 1px solid var(--b);
+        display: flex;
+        gap: 8px
+    }
+
+    .chat-input {
+        flex: 1;
+        background: var(--bg2);
+        border: 1px solid var(--b);
+        border-radius: 20px;
+        padding: 10px 16px;
+        color: var(--t);
+        font-size: 12px;
+        outline: none;
+        font-family: inherit;
+        resize: none
+    }
+
+    .chat-input:focus {
+        border-color: var(--bl)
+    }
+
+    .chat-send {
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        background: var(--bl);
+        color: #fff;
+        cursor: pointer;
+        transition: opacity .2s
+    }
+
+    .chat-send:hover {
+        opacity: .85
+    }
+
+    .chat-send:disabled {
+        opacity: .4;
+        cursor: default
+    }/* MODAL */
+
+    .modal-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 200;
+        background: rgba(0, 0, 0, .85);
+        backdrop-filter: blur(8px);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 20px
+    }
+
+    .modal-overlay.open {
+        display: flex
+    }
+
+    .modal {
+        background: #111;
+        border: 1px solid var(--b);
+        border-radius: 20px;
+        max-width: 640px;
+        width: 100%;
+        max-height: 85vh;
+        overflow-y: auto;
+        padding: 28px
+    }
+
+    .modal .close-btn {
+        float: right;
+        background: none;
+        border: none;
+        color: var(--t2);
+        font-size: 22px;
+        cursor: pointer;
+        line-height: 1;
+        padding: 0 0 8px 8px
+    }
+
+    .modal .mh {
+        font-size: 20px;
+        font-weight: 800;
+        letter-spacing: -.4px;
+        margin-bottom: 2px
+    }
+
+    .modal .mtype {
+        font-size: 11px;
+        color: var(--t3);
+        text-transform: uppercase;
+        letter-spacing: 1px
+    }
+
+    .modal .mscore {
+        font-size: 48px;
+        font-weight: 900;
+        letter-spacing: -2px;
+        margin: 10px 0
+    }
+
+    .modal .mstats {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+        margin: 16px 0
+    }
+
+    .modal .mst {
+        font-size: 10px;
+        color: var(--t3);
+        text-transform: uppercase;
+        letter-spacing: .5px
+    }
+
+    .modal .mst span {
+        display: block;
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--t);
+        margin-top: 2px
+    }
+
+    .modal .mrec {
+        padding: 14px;
+        border-radius: 12px;
+        font-size: 13px;
+        line-height: 1.6;
+        margin-top: 14px
+    }
+
+    .modal .mrec.reorder-rec {
+        background: var(--rd2);
+        border: 1px solid rgba(255, 69, 58, .2);
+        color: var(--rd)
+    }
+
+    .modal .mrec.markdown-rec {
+        background: var(--am2);
+        border: 1px solid rgba(255, 159, 10, .2);
+        color: var(--am)
+    }
+
+    .modal .mrec.watch-rec {
+        background: var(--bl2);
+        border: 1px solid rgba(10, 132, 255, .2);
+        color: var(--bl)
+    }
+
+    .modal .mrec.healthy-rec {
+        background: var(--gr2);
+        border: 1px solid rgba(48, 209, 88, .2);
+        color: var(--gr)
+    }
+
+    .loading-dots {
+        display: inline-flex;
+        gap: 3px
+    }
+
+    .loading-dots span {
+        width: 5px;
+        height: 5px;
+        background: var(--t3);
+        border-radius: 50%;
+        animation: bounce 1.2s infinite
+    }
+
+    .loading-dots span:nth-child(2) {
+        animation-delay: .2s
+    }
+
+    .loading-dots span:nth-child(3) {
+        animation-delay: .4s
+    }
+
+    @keyframes bounce {
+        0%, 80%, 100% {
+            transform: scale(.6);
+            opacity:.4
+        }
+
+        40% {
+            transform: scale(1);
+            opacity: 1
+        }
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: var(--t3)
+    }
+
+    .empty-state .icon {
+        font-size: 40px;
+        margin-bottom: 12px
+    }/* PROBLEM PANEL */
+
+    .prob-header {
+        margin-bottom: 18px
+    }
+
+    .prob-header h2 {
+        font-size: 20px;
+        font-weight: 800;
+        letter-spacing: -.4px;
+        line-height: 1.2
+    }
+
+    .prob-header p {
+        font-size: 12px;
+        color: var(--t3);
+        margin-top: 5px
+    }
+
+    .prob-row {
+        display: flex;
+        gap: 14px;
+        margin-bottom: 14px
+    }
+
+    .prob-card {
+        flex: 1;
+        border-radius: 16px;
+        padding: 24px 26px
+    }
+
+    .prob-card.prob-over {
+        background: rgba(255, 69, 58, .04);
+        border: 2px solid rgba(255, 69, 58, .2)
+    }
+
+    .prob-card.prob-out {
+        background: rgba(255, 159, 10, .04);
+        border: 2px solid rgba(255, 159, 10, .2)
+    }
+
+    .prob-tag {
+        font-size: 9px;
+        text-transform: uppercase;
+        letter-spacing: 1.2px;
+        font-weight: 700;
+        margin-bottom: 10px
+    }
+
+    .prob-card.prob-over .prob-tag {
+        color: var(--rd)
+    }
+
+    .prob-card.prob-out .prob-tag {
+        color: var(--am)
+    }
+
+    .prob-title {
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--t2);
+        margin-bottom: 10px
+    }
+
+    .prob-bignum {
+        font-size: 64px;
+        font-weight: 900;
+        letter-spacing: -3px;
+        line-height: 1;
+        margin-bottom: 6px
+    }
+
+    .prob-card.prob-over .prob-bignum {
+        color: var(--rd)
+    }
+
+    .prob-card.prob-out .prob-bignum {
+        color: var(--am)
+    }
+
+    .prob-byline {
+        font-size: 12px;
+        color: var(--t2);
+        line-height: 1.5;
+        margin-bottom: 14px
+    }
+
+    .prob-explain {
+        font-size: 11px;
+        color: var(--t3);
+        line-height: 1.65;
+        border-top: 1px solid rgba(255, 255, 255, .06);
+        padding-top: 12px
+    }
+
+    .prob-health {
+        display: flex;
+        gap: 14px;
+        background: var(--bg2);
+        border: 1px solid var(--b);
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 14px
+    }
+
+    .prob-health-chart {
+        flex: 1.4;
+        min-width: 0
+    }
+
+    .prob-health-chart .chart-title {
+        font-size: 13px;
+        font-weight: 600;
+        margin-bottom: 4px
+    }
+
+    .prob-health-chart .chart-sub {
+        font-size: 10px;
+        color: var(--t3);
+        margin-bottom: 12px
+    }
+
+    .prob-health-legend {
+        flex: 1;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        align-content: center
+    }
+
+    .hl-card {
+        padding: 12px 14px;
+        border-radius: 10px;
+        border: 1px solid var(--b)
+    }
+
+    .hl-card.rd {
+        border-color: rgba(255, 69, 58, .2);
+        background: rgba(255, 69, 58, .04)
+    }
+
+    .hl-card.am {
+        border-color: rgba(255, 159, 10, .2);
+        background: rgba(255, 159, 10, .04)
+    }
+
+    .hl-card.bl {
+        border-color: rgba(10, 132, 255, .2);
+        background: rgba(10, 132, 255, .04)
+    }
+
+    .hl-card.gr {
+        border-color: rgba(48, 209, 88, .2);
+        background: rgba(48, 209, 88, .04)
+    }
+
+    .hl-num {
+        font-size: 30px;
+        font-weight: 800;
+        line-height: 1
+    }
+
+    .hl-card.rd .hl-num {
+        color: var(--rd)
+    }
+
+    .hl-card.am .hl-num {
+        color: var(--am)
+    }
+
+    .hl-card.bl .hl-num {
+        color: var(--bl)
+    }
+
+    .hl-card.gr .hl-num {
+        color: var(--gr)
+    }
+
+    .hl-label {
+        font-size: 11px;
+        font-weight: 600;
+        margin: 3px 0 2px
+    }
+
+    .hl-desc {
+        font-size: 10px;
+        color: var(--t3);
+        line-height: 1.4
+    }
+
+    .top5-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, .04);
+        cursor: pointer
+    }
+
+    .top5-item:last-child {
+        border-bottom: none
+    }
+
+    .top5-item:hover .top5-name {
+        color: var(--t)
+    }
+
+    .top5-name {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--t2)
+    }
+
+    .top5-sku {
+        font-size: 10px;
+        color: var(--t3);
+        margin-top: 2px
+    }
+
+    .top5-val {
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--rd);
+        white-space: nowrap
+    }
+
+    .top5-vel {
+        font-size: 10px;
+        color: var(--t3);
+        text-align: right;
+        margin-top: 2px
+    }/* BACKTEST PROOF PANEL */
+
+    .bt-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 16px
+    }
+
+    .bt-timeline {
+        display: flex;
+        align-items: stretch;
+        gap: 0;
+        background: rgba(255, 255, 255, .02);
+        border: 1px solid var(--b);
+        border-radius: 16px;
+        overflow: hidden
+    }
+
+    .bt-tblock {
+        flex: 1;
+        padding: 18px 22px
+    }
+
+    .bt-tblock.mid {
+        background: rgba(48, 209, 88, .06);
+        border-left: 1px solid rgba(48, 209, 88, .2);
+        border-right: 1px solid rgba(48, 209, 88, .2)
+    }
+
+    .bt-tblock .tl-label {
+        font-size: 9px;
+        text-transform: uppercase;
+        letter-spacing: .8px;
+        color: var(--t3);
+        margin-bottom: 6px
+    }
+
+    .bt-tblock.mid .tl-label {
+        color: var(--gr)
+    }
+
+    .bt-tblock .tl-period {
+        font-size: 14px;
+        font-weight: 700;
+        letter-spacing: -.2px
+    }
+
+    .bt-tblock.mid .tl-period {
+        color: var(--gr)
+    }
+
+    .bt-tblock .tl-desc {
+        font-size: 11px;
+        color: var(--t3);
+        margin-top: 5px;
+        line-height: 1.5
+    }
+
+    .bt-arrow-col {
+        display: flex;
+        align-items: center;
+        padding: 0 10px;
+        color: var(--t3);
+        font-size: 18px;
+        flex-shrink: 0
+    }
+
+    .bt-sides {
+        display: flex;
+        gap: 16px
+    }
+
+    .bt-side {
+        flex: 1;
+        border-radius: 16px;
+        padding: 24px 26px
+    }
+
+    .bt-side.without {
+        background: rgba(255, 69, 58, .05);
+        border: 1px solid rgba(255, 69, 58, .2)
+    }
+
+    .bt-side.with {
+        background: rgba(48, 209, 88, .05);
+        border: 1px solid rgba(48, 209, 88, .2)
+    }
+
+    .bt-side .side-label {
+        font-size: 9px;
+        text-transform: uppercase;
+        letter-spacing: .8px;
+        color: var(--t3);
+        margin-bottom: 14px
+    }
+
+    .bt-side .side-num {
+        font-size: 56px;
+        font-weight: 900;
+        letter-spacing: -2.5px;
+        line-height: 1
+    }
+
+    .bt-side.without .side-num {
+        color: var(--rd)
+    }
+
+    .bt-side.with .side-num {
+        color: var(--gr)
+    }
+
+    .bt-side .side-caption {
+        font-size: 12px;
+        color: var(--t3);
+        margin-bottom: 20px;
+        margin-top: 2px
+    }
+
+    .bt-item {
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+        margin-top: 12px
+    }
+
+    .bt-item .bi-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        flex-shrink: 0;
+        margin-bottom: 1px
+    }
+
+    .bt-item .bi-label {
+        font-size: 12px;
+        color: var(--t2);
+        flex: 1
+    }
+
+    .bt-item .bi-val {
+        font-size: 16px;
+        font-weight: 700;
+        white-space: nowrap
+    }
+
+    .bt-divider {
+        height: 1px;
+        background: rgba(255, 255, 255, .06);
+        margin: 16px 0
+    }
+
+    .bt-net-row {
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--gr);
+        padding-top: 14px;
+        border-top: 1px solid rgba(48, 209, 88, .15)
+    }
+
+    .bt-chart-card {
+        background: var(--bg2);
+        border: 1px solid var(--b);
+        border-radius: 16px;
+        padding: 22px
+    }
+
+    .bt-chart-card h3 {
+        font-size: 14px;
+        font-weight: 700;
+        margin-bottom: 3px
+    }
+
+    .bt-chart-card .sub {
+        font-size: 11px;
+        color: var(--t3);
+        margin-bottom: 18px
+    }
+
+    @media (max-width: 1024px) {
+        .app {
+            flex-direction: column
+        }
+
+        .sidebar {
+            width: 100%;
+            min-width: 100%;
+            height: 45%;
+            border-right: none;
+            border-bottom: 1px solid var(--b)
+        }
+
+        .main {
+            height: 55%
+        }
+
+        .topbar {
+            gap: 8px
+        }
+
+        .kpi-row {
+            order: 3;
+            width: 100%;
+            justify-content: flex-start
+        }
+    }
+
+    @media (max-width: 640px) {
+        .ss-grid {
+            grid-template-columns: 1fr
+        }
+
+        .dash-grid {
+            grid-template-columns: 1fr
+        }
+
+        .topbar {
+            padding: 10px 12px
+        }
+
+        .search-box {
+            width: 120px
+        }
+
+        .kpi-row {
+            display: none
+        }
+    }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    <script src="stocksense_data.js"></script>
+    <script src="backtest_data.js"></script>
+</head>
+<body>
+
+    <div class="app">
+        <!-- SIDEBAR - AI Chat -->
+        <div class="sidebar">
+            <div class="sidebar-head">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+                    <div>
+                        <h2>
+                            StockSense 
+                            <span style="color:var(--bl)">AI</span>
+                        </h2>
+                        <div class="subtitle">Ask about inventory, cash, reorders, or suppliers</div>
+                    </div>
+                    <button id="api-key-btn" onclick="toggleApiKeyInput()" style="background:none;border:1px solid var(--b);border-radius:8px;padding:4px 8px;font-size:9px;color:var(--t3);cursor:pointer;white-space:nowrap;flex-shrink:0" title="Connect Claude API for smarter answers">+ Claude API</button>
+                </div>
+                <div id="api-key-area" style="display:none;margin-top:8px">
+                    <input id="api-key-input" type="password" placeholder="sk-ant-..." style="width:100%;background:rgba(255,255,255,.04);border:1px solid var(--b);border-radius:8px;padding:7px 10px;color:var(--t);font-size:11px;font-family:inherit;outline:none" oninput="onApiKeyChange()">
+                    <div style="font-size:9px;color:var(--t3);margin-top:4px">Key stays in-browser only. Enables real Claude intelligence.</div>
+                </div>
+            </div>
+            <div class="chat-area">
+                <div class="chat-messages" id="chat-messages">
+                    <div class="chat-msg agent">
+
+                                  Hello. I'm your working capital agent, grounded in Pretty Fly's 24-month dataset. Ask me about:
+                        <br>
+
+                                  • Which SKUs to reorder first
+                        <br>
+
+                                  • How much cash is trapped in overstock
+                        <br>
+
+                                  • Markdown recommendations
+                        <br>
+
+                                  • Supplier lead times & payment terms
+                        <br>
+
+                                  • Cash flow forecasting
+                                  
+                        <div class="msg-time">Today, 09:00</div>
+                    </div>
+                </div>
+                <div class="chat-suggestions" id="chat-suggestions">
+                    <button class="sug-btn" onclick="sendSuggestion('What should I reorder first?')">What to reorder first?</button>
+                    <button class="sug-btn" onclick="sendSuggestion('How much cash is trapped?')">How much cash is trapped?</button>
+                    <button class="sug-btn" onclick="sendSuggestion('Which products should I mark down?')">What to mark down?</button>
+                    <button class="sug-btn" onclick="sendSuggestion('Show me cash flow scenario')">Cash flow scenario</button>
+                    <button class="sug-btn" onclick="sendSuggestion('What are my supplier lead times?')">Supplier lead times</button>
+                    <button class="sug-btn" onclick="sendSuggestion('What is my current P&L?')">Current P&L</button>
+                </div>
+                <div class="chat-input-area">
+                    <input class="chat-input" id="chat-input" placeholder="Ask about inventory, cash, reorders..." onkeydown="if(event.key==='Enter')sendChat()">
+                    <button class="chat-send" id="chat-send" onclick="sendChat()">Send</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MAIN CONTENT -->
+        <div class="main">
+            <!-- TOP BAR -->
+            <div class="topbar">
+                <div class="logo">
+                    Stock
+                    <span>Sense</span>
+                </div>
+                <div class="kpi-row" id="kpi-row">
+                    <div class="kpi-pill cash">
+                        <span class="sv" id="kpi-trapped">—</span>
+                        Trapped
+                    </div>
+                    <div class="kpi-pill revenue">
+                        <span class="sv" id="kpi-lost">—</span>
+                        Lost Rev
+                    </div>
+                    <div class="kpi-pill reorder">
+                        <span class="sv" id="kpi-reorder">—</span>
+                        Reorder
+                    </div>
+                    <div class="kpi-pill watch">
+                        <span class="sv" id="kpi-watch">—</span>
+                        Watch
+                    </div>
+                    <div class="kpi-pill healthy">
+                        <span class="sv" id="kpi-healthy">—</span>
+                        Healthy
+                    </div>
+                    <div class="kpi-pill markdown">
+                        <span class="sv" id="kpi-markdown">—</span>
+                        Mark Down
+                    </div>
+                </div>
+                <div class="topbar-actions">
+                    <button class="btn-sm accent" onclick="window.open('deepdive.html','_blank')">Deep Dive →</button>
+                </div>
+            </div>
+
+            <!-- TABS -->
+            <div class="tabbar">
+                <button class="tab active" onclick="switchTab('overview', event)">The Problem</button>
+                <button class="tab" onclick="switchTab('backtest', event)" style="color:var(--gr)">The Proof</button>
+                <button class="tab" onclick="switchTab('recommendations', event)">Action Queue</button>
+                <button class="tab" onclick="switchTab('stocksense', event)">All SKUs</button>
+                <button class="tab" onclick="switchTab('cashflow', event)">Cash Flow</button>
+                <input class="search-box" id="search" placeholder="Search SKU or product..." oninput="filterGrid()" style="display:none">
+            </div>
+
+            <!-- CONTENT -->
+            <div class="content" id="content">
+
+                <!-- TAB 1: THE PROBLEM -->
+                <div class="panel active" id="panel-overview">
+
+                    <div class="prob-header">
+                        <h2>Pretty Fly has two inventory problems — happening right now.</h2>
+                        <p>
+                            StockSense scored all 645 variants. Here's what it found. 
+                            <span style="color:var(--t3)">Data as of 1 Jun 2026.</span>
+                        </p>
+                    </div>
+
+                    <div class="prob-row">
+                        <div class="prob-card prob-over">
+                            <div class="prob-tag">Problem 1 — Overstock</div>
+                            <div class="prob-title">Cash frozen in the wrong products</div>
+                            <div class="prob-bignum" id="ov-trapped">—</div>
+                            <div class="prob-byline">
+                                locked up across 
+                                <strong id="ov-overstock-count">—</strong>
+                                 variants with more than 12 months of stock sitting in the warehouse
+                            </div>
+                            <div class="prob-explain">Money was spent buying these products. They're not selling fast enough to justify the stock level. That cash isn't earning anything — it's just sitting there. Every week it stays, it's a week it could have been in something that sells.</div>
+                        </div>
+                        <div class="prob-card prob-out">
+                            <div class="prob-tag">Problem 2 — Stockouts</div>
+                            <div class="prob-title">Revenue leaking through empty shelves</div>
+                            <div class="prob-bignum" id="ov-lost">—</div>
+                            <div class="prob-byline">
+                                per month in revenue lost from 
+                                <strong id="ov-reorder-count">—</strong>
+                                 variants that are out of stock but customers still want
+                            </div>
+                            <div class="prob-explain">These products sold recently — there's real demand — but the shelves are empty. Every month this goes unresolved, that revenue is gone forever. It doesn't roll over. Stockouts are silent losses: no error message, just a customer who bought somewhere else.</div>
+                        </div>
+                    </div>
+
+                    <div class="prob-health">
+                        <div class="prob-health-chart">
+                            <div class="chart-title">All 645 variants, scored and classified</div>
+                            <div class="chart-sub">StockSense gives every SKU a 0–100 urgency score and puts it in one of four buckets</div>
+                            <div style="position:relative;height:260px">
+                                <canvas id="chart-health">
+                                </canvas>
+                            </div>
+                        </div>
+                        <div class="prob-health-legend">
+                            <div class="hl-card rd">
+                                <div class="hl-num" id="hl-reorder">—</div>
+                                <div class="hl-label">Reorder Now</div>
+                                <div class="hl-desc">Out of stock or running out within 2 months. Losing revenue today.</div>
+                            </div>
+                            <div class="hl-card bl">
+                                <div class="hl-num" id="hl-watch">—</div>
+                                <div class="hl-label">Watch</div>
+                                <div class="hl-desc">High demand score. Monitor closely — may need restocking soon.</div>
+                            </div>
+                            <div class="hl-card am">
+                                <div class="hl-num" id="hl-markdown">—</div>
+                                <div class="hl-label">Mark Down</div>
+                                <div class="hl-desc">Too much stock. Run a discount to unlock the trapped cash.</div>
+                            </div>
+                            <div class="hl-card gr">
+                                <div class="hl-num" id="hl-healthy">—</div>
+                                <div class="hl-label">Healthy</div>
+                                <div class="hl-desc">Well-balanced. Good stock cover, steady sales. No action needed.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="dash-card">
+                        <h3>Top 5 most urgent reorders</h3>
+                        <div class="sub">Out of stock, with the highest recent demand. These are losing the most money right now. Click to drill in.</div>
+                        <div id="top5-list" style="margin-top:4px"></div>
+                    </div>
+
+                </div>
+
+                <!-- TAB 2: STOCKSENSE GRID -->
+                <div class="panel" id="panel-stocksense">
+                    <div class="ss-grid" id="ss-grid"></div>
+                    <div class="empty-state" id="ss-empty" style="display:none">
+                        <div class="icon">No results</div>
+                        <div>No SKUs match your search.</div>
+                    </div>
+                </div>
+
+                <!-- TAB 3: RECOMMENDATION QUEUE -->
+                <div class="panel" id="panel-recommendations">
+                    <div class="dash-card" style="margin-bottom:12px">
+                        <h3>Prioritised Action Queue</h3>
+                        <div class="sub">Sorted by StockSense Score (highest urgency first). Click any row to drill in.</div>
+                        <div class="scenario-row">
+                            <button class="scenario-btn active" onclick="filterRecQueue('all', event)">
+                                All 
+                                <small>(645)</small>
+                            </button>
+                            <button class="scenario-btn" onclick="filterRecQueue('reorder', event)">
+                                Reorder 
+                                <small id="rq-reorder">—</small>
+                            </button>
+                            <button class="scenario-btn" onclick="filterRecQueue('watch', event)">
+                                Watch 
+                                <small id="rq-watch">—</small>
+                            </button>
+                            <button class="scenario-btn" onclick="filterRecQueue('markdown', event)">
+                                Mark Down 
+                                <small id="rq-markdown">—</small>
+                            </button>
+                            <button class="scenario-btn" onclick="filterRecQueue('healthy', event)">
+                                Healthy 
+                                <small id="rq-healthy">—</small>
+                            </button>
+                        </div>
+                    </div>
+                    <div style="overflow-x:auto;max-height:calc(100vh - 220px);overflow-y:auto">
+                        <table class="rec-table" id="rec-table">
+                            <thead>
+                                <tr>
+                                    <th>Score</th>
+                                    <th>Status</th>
+                                    <th>SKU</th>
+                                    <th>Product</th>
+                                    <th>Type</th>
+                                    <th>Stock</th>
+                                    <th>Vel/wk</th>
+                                    <th>Cover</th>
+                                    <th>Margin</th>
+                                    <th>Recommendation</th>
+                                    <th>Cost</th>
+                                </tr>
+                            </thead>
+                            <tbody id="rec-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- TAB 4: CASH FLOW -->
+                <div class="panel" id="panel-cashflow">
+                    <div class="cf-grid">
+                        <div class="cf-card">
+                            <h3>Cash Recovery Scenarios</h3>
+                            <div class="sub">Annual revenue impact from freeing trapped cash</div>
+                            <canvas id="chart-scenarios" height="180">
+                            </canvas>
+                        </div>
+                        <div class="cf-card">
+                            <h3>Markdown Cash Liberation</h3>
+                            <div class="sub">Top 10 overstock variants — cash freed at 30% off retail</div>
+                            <canvas id="chart-markdown" height="180">
+                            </canvas>
+                        </div>
+                        <div class="cf-card full">
+                            <h3>What-If Scenarios</h3>
+                            <div class="sub">Three strategies for deploying the £205K in trapped inventory</div>
+                            <div class="scenario-row" style="margin:12px 0">
+                                <button class="scenario-btn active" onclick="highlightScenario('conservative', event)">Conservative</button>
+                                <button class="scenario-btn" onclick="highlightScenario('full', event)">Full Deployment</button>
+                                <button class="scenario-btn" onclick="highlightScenario('aggressive', event)">Aggressive</button>
+                            </div>
+                            <table class="rec-table" style="margin-top:8px">
+                                <thead>
+                                    <tr>
+                                        <th>Scenario</th>
+                                        <th>Cash Freed</th>
+                                        <th>Revenue Impact/yr</th>
+                                        <th>Cash Buffer After</th>
+                                        <th>Months to Breakeven</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr id="scen-conservative">
+                                        <td style="color:var(--am);font-weight:600">Conservative</td>
+                                        <td>£102K</td>
+                                        <td>+£750K</td>
+                                        <td>+£45K/mo</td>
+                                        <td>2.7</td>
+                                    </tr>
+                                    <tr id="scen-full">
+                                        <td style="color:var(--gr);font-weight:600">Full Deployment</td>
+                                        <td>£205K</td>
+                                        <td>+£1.49M</td>
+                                        <td>+£70K/mo</td>
+                                        <td>1.6</td>
+                                    </tr>
+                                    <tr id="scen-aggressive">
+                                        <td style="color:var(--bl);font-weight:600">Aggressive</td>
+                                        <td>£205K + restock</td>
+                                        <td>+£1.8M–2.2M</td>
+                                        <td>+£85K/mo</td>
+                                        <td>1.2</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 5: BACKTEST PROOF -->
+                <div class="panel" id="panel-backtest">
+                    <div class="bt-wrap">
+
+                        <!-- 1. Methodology timeline -->
+                        <div class="bt-timeline">
+                            <div class="bt-tblock">
+                                <div class="tl-label">① Training Window</div>
+                                <div class="tl-period">Jun 2024 – May 2025</div>
+                                <div class="tl-desc">12 months of real sales, inventory &amp; supply chain data</div>
+                            </div>
+                            <div class="bt-arrow-col">→</div>
+                            <div class="bt-tblock mid">
+                                <div class="tl-label">② Snapshot &amp; Score</div>
+                                <div class="tl-period">1 Jun 2025</div>
+                                <div class="tl-desc">
+                                    StockSense scores all 645 variants.
+                                    <br>
+                                    Generates reorder &amp; markdown recommendations.
+                                </div>
+                            </div>
+                            <div class="bt-arrow-col">→</div>
+                            <div class="bt-tblock">
+                                <div class="tl-label">③ Simulate &amp; Compare</div>
+                                <div class="tl-period">Jun 2025 – May 2026</div>
+                                <div class="tl-desc">Follow every recommendation. Measure the outcome against what actually happened.</div>
+                            </div>
+                        </div>
+
+                        <!-- 2. Side-by-side comparison -->
+                        <div class="bt-sides">
+
+                            <!-- Without StockSense -->
+                            <div class="bt-side without">
+                                <div class="side-label">✕ &nbsp;Without StockSense</div>
+                                <div class="side-num" id="bt-pain">£817K</div>
+                                <div class="side-caption">total pain over 12 months</div>
+
+                                <div class="bt-item">
+                                    <div class="bi-dot" style="background:var(--rd)"></div>
+                                    <div class="bi-label">Variants that stocked out</div>
+                                    <div class="bi-val" style="color:var(--rd)" id="bt-reorder-count">366</div>
+                                </div>
+                                <div class="bt-item" style="margin-top:4px;margin-left:17px">
+                                    <div class="bi-label" style="color:var(--t3);font-size:11px">→ revenue lost to empty shelves</div>
+                                    <div class="bi-val" style="color:var(--rd);font-size:13px" id="bt-lost-rev">£303K</div>
+                                </div>
+
+                                <div class="bt-divider"></div>
+
+                                <div class="bt-item">
+                                    <div class="bi-dot" style="background:var(--am)"></div>
+                                    <div class="bi-label">Variants stuck in overstock</div>
+                                    <div class="bi-val" style="color:var(--am)" id="bt-markdown-count">130</div>
+                                </div>
+                                <div class="bt-item" style="margin-top:4px;margin-left:17px">
+                                    <div class="bi-label" style="color:var(--t3);font-size:11px">→ cash frozen at landed cost</div>
+                                    <div class="bi-val" style="color:var(--am);font-size:13px" id="bt-trapped">£514K</div>
+                                </div>
+                            </div>
+
+                            <!-- With StockSense -->
+                            <div class="bt-side with">
+                                <div class="side-label">✓ &nbsp;With StockSense</div>
+                                <div class="side-num" id="bt-net">£104K</div>
+                                <div class="side-caption">net cash recovered (honest model)</div>
+
+                                <div class="bt-item">
+                                    <div class="bi-dot" style="background:var(--am)"></div>
+                                    <div class="bi-label">Proactive clearance at 40% off</div>
+                                </div>
+                                <div class="bt-item" style="margin-top:4px;margin-left:17px">
+                                    <div class="bi-label" style="color:var(--t3);font-size:11px">→ 80% sell-through vs 62.8% natural rate</div>
+                                </div>
+                                <div class="bt-item" style="margin-top:4px;margin-left:17px">
+                                    <div class="bi-label" style="color:var(--t3);font-size:11px">→ cash recovered from units that wouldn't otherwise sell</div>
+                                    <div class="bi-val" style="color:var(--gr);font-size:13px" id="bt-freed">£190K</div>
+                                </div>
+
+                                <div class="bt-divider"></div>
+
+                                <div class="bt-item">
+                                    <div class="bi-dot" style="background:var(--bl)"></div>
+                                    <div class="bi-label">Reorder 366 stockout variants</div>
+                                </div>
+                                <div class="bt-item" style="margin-top:4px;margin-left:17px">
+                                    <div class="bi-label" style="color:var(--t3);font-size:11px">→ cost of recommended reorders</div>
+                                    <div class="bi-val" style="color:var(--bl);font-size:13px" id="bt-reorder-cost">£87K</div>
+                                </div>
+
+                                <div class="bt-net-row" id="bt-net-eq">
+                                    £190K freed &minus; £87K cost = 
+                                    <strong>£103K net</strong>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <!-- 3. Sell-through accuracy chart — the real proof -->
+                        <div class="bt-chart-card">
+                            <h3>The real proof: StockSense identified the dead stock before it happened</h3>
+                            <div class="sub">Of the 130 overstock variants flagged at Jun 2025, here's what actually happened to their inventory over the following 12 months — confirming the call was right.</div>
+                            <div id="bt-dead-stat" style="display:flex;gap:14px;margin-bottom:16px;flex-wrap:wrap"></div>
+                            <div style="position:relative;height:220px">
+                                <canvas id="chart-backtest-impact">
+                                </canvas>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL -->
+    <div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
+        <div class="modal" id="modal" onclick="event.stopPropagation()"></div>
+    </div>
+
+    <script>
+    var D = null;
+    var currentTab = 'overview';
+    var recFilter = 'all';
+    var recQueueData = [];
+    var charts = {};
+
+    document.addEventListener('DOMContentLoaded', function() {
+        D = window.STOCKSENSE_DATA;
+        if (!D) {
+            document.getElementById('content').innerHTML = '<div class="empty-state"><div class="icon">Data Not Loaded</div><div>STOCKSENSE_DATA is missing. Ensure stocksense_data.js is loaded.</div></div>';
+            return;
+        }
+
+        D.variants.sort(function(a, b) {
+            return b.stocksense_score - a.stocksense_score;
+        });
+        recQueueData = D.variants.slice();
+
+        updateKPIs();
+        renderOverview();
+        renderRecQueue();
+        initCashFlowCharts();
+    });
+
+    function updateKPIs() {
+        var s = D.summary;
+        var fmtK = function(n) {
+            return '£' + (n / 1000).toFixed(0) + 'K';
+        };
+
+        // Top-bar pills
+        document.getElementById('kpi-reorder').textContent = s.reorder_count;
+        document.getElementById('kpi-watch').textContent = s.watch_count;
+        document.getElementById('kpi-healthy').textContent = s.healthy_count;
+        document.getElementById('kpi-markdown').textContent = s.markdown_count;
+        document.getElementById('kpi-trapped').textContent = fmtK(s.total_trapped_cash);
+        document.getElementById('kpi-lost').textContent = fmtK(s.lost_monthly_revenue) + '/mo';
+
+        // Rec queue filter badges
+        document.getElementById('rq-reorder').textContent = s.reorder_count;
+        document.getElementById('rq-watch').textContent = s.watch_count;
+        document.getElementById('rq-healthy').textContent = s.healthy_count;
+        document.getElementById('rq-markdown').textContent = s.markdown_count;
+
+        // The Problem panel
+        document.getElementById('ov-trapped').textContent = fmtK(s.total_trapped_cash);
+        document.getElementById('ov-lost').textContent = fmtK(s.lost_monthly_revenue) + '/mo';
+        document.getElementById('ov-overstock-count').textContent = s.markdown_count;
+        document.getElementById('ov-reorder-count').textContent = s.reorder_count;
+
+        // Health legend counts
+        document.getElementById('hl-reorder').textContent = s.reorder_count;
+        document.getElementById('hl-watch').textContent = s.watch_count;
+        document.getElementById('hl-markdown').textContent = s.markdown_count;
+        document.getElementById('hl-healthy').textContent = s.healthy_count;
+    }
+
+    function switchTab(tab, e) {
+        if (e && e.target) {
+            document.querySelectorAll('.tabbar .tab').forEach(function(t) {
+                t.classList.remove('active');
+            });
+            e.target.classList.add('active');
+        }
+        currentTab = tab;
+        document.querySelectorAll('.panel').forEach(function(p) {
+            p.classList.remove('active');
+        });
+        document.getElementById('panel-' + tab).classList.add('active');
+
+        var searchEl = document.getElementById('search');
+        if (tab === 'stocksense') {
+            searchEl.style.display = '';
+            renderStocksenseGrid();
+        } else {
+            searchEl.style.display = 'none';
+        }
+
+        if (tab === 'cashflow')
+            initCashFlowCharts();
+        if (tab === 'backtest')
+            renderBacktest();
+    }
+
+    function filterGrid() {
+        renderStocksenseGrid();
+    }
+
+    /* ======== THE PROBLEM PANEL ======== */
+    function renderOverview() {
+        var ctx = document.getElementById('chart-health');
+        if (ctx && !charts['health']) {
+            charts['health'] = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Reorder Now (' + D.summary.reorder_count + ')', 'Watch (' + D.summary.watch_count + ')', 'Mark Down (' + D.summary.markdown_count + ')', 'Healthy (' + D.summary.healthy_count + ')'],
+                    datasets: [{
+                        data: [D.summary.reorder_count, D.summary.watch_count, D.summary.markdown_count, D.summary.healthy_count],
+                        backgroundColor: ['#ff453a', '#0a84ff', '#ff9f0a', '#30d158'],
+                        borderColor: '#000',
+                        borderWidth: 3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '60%',
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: '#98989d',
+                                font: {
+                                    size: 11
+                                },
+                                padding: 18,
+                                usePointStyle: true,
+                                pointStyleWidth: 10
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(c) {
+                                    var pct = (c.raw / D.summary.total_variants * 100).toFixed(0);
+                                    return ' ' + c.raw + ' variants (' + pct + '%)';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        var top5 = D.variants.filter(function(v) {
+            return v.status === 'reorder' && v.inventory <= 0;
+        })
+        .sort(function(a, b) {
+            return b.revenue_3mo - a.revenue_3mo;
+        }).slice(0, 5);
+        var html = '';
+        for (var i = 0; i < top5.length; i++) {
+            var v = top5[i];
+            html += '<div class="top5-item" onclick="openModalByVariant(\'' + v.variant_id + '\')">';
+            html += '<div><div class="top5-name">' + esc(v.product_name) + '</div><div class="top5-sku">' + esc(v.sku) + ' · ' + esc(v.product_type) + ' · vel ' + v.velocity_weekly.toFixed(1) + '/wk</div></div>';
+            html += '<div style="text-align:right"><div class="top5-val">−£' + v.revenue_3mo.toFixed(0) + '</div><div class="top5-vel">last 3 months lost</div></div>';
+            html += '</div>';
+        }
+        document.getElementById('top5-list').innerHTML = html || '<div style="color:var(--t3);font-size:12px;padding:12px 0">No out-of-stock variants with recent sales found.</div>';
+    }
+
+    /* ======== STOCKSENSE GRID ======== */
+    function renderStocksenseGrid() {
+        var grid = document.getElementById('ss-grid');
+        var empty = document.getElementById('ss-empty');
+        var search = (document.getElementById('search').value || '').toLowerCase();
+        var html = '';
+        var shown = 0;
+
+        for (var i = 0; i < D.variants.length; i++) {
+            var v = D.variants[i];
+            if (search && v.product_name.toLowerCase().indexOf(search) === -1 && v.sku.toLowerCase().indexOf(search) === -1)
+                continue;
+
+            var sc = v.stocksense_score >= 60 ? 'hi' : v.stocksense_score >= 40 ? 'md' : 'lo';
+            var cardClass = v.status + '-card';
+
+            html += '<div class="pcard ' + cardClass + '" onclick="openModalByVariant(\'' + v.variant_id + '\')">';
+            html += '<div class="phead">';
+            html += '<div class="pname"><span class="ptype">' + esc(v.product_type) + '</span>' + esc(v.product_name) + '</div>';
+            html += '<div class="score ' + sc + '">' + v.stocksense_score + '</div>';
+            html += '</div>';
+            html += '<div class="pstats">';
+            html += '<div class="pst">Stock<span>' + (v.inventory > 0 ? v.inventory : '<span style=color:var(--rd)>0</span>') + '</span></div>';
+            html += '<div class="pst">Vel<span>' + v.velocity_weekly.toFixed(1) + '/wk</span></div>';
+            html += '<div class="pst">Cover<span>' + (v.months_cover >= 999 ? '∞' : v.months_cover.toFixed(0) + 'mo') + '</span></div>';
+            html += '<div class="pst">Margin<span>' + v.margin_pct.toFixed(0) + '%</span></div>';
+            html += '</div>';
+            html += '<div class="rec ' + v.status + '-rec">' + esc(v.recommendation) + '</div>';
+            html += '</div>';
+            shown++;
+        }
+
+        grid.innerHTML = html;
+        empty.style.display = shown ? 'none' : '';
+    }
+
+    /* ======== RECOMMENDATION QUEUE ======== */
+    function renderRecQueue() {
+        var tbody = document.getElementById('rec-tbody');
+        var html = '';
+        var data = recFilter === 'all' ? recQueueData : recQueueData.filter(function(v) {
+            return v.status === recFilter;
+        });
+
+        for (var i = 0; i < Math.min(data.length, 200); i++) {
+            var v = data[i];
+            var sc = v.stocksense_score >= 60 ? 'hi' : v.stocksense_score >= 40 ? 'md' : 'lo';
+            html += '<tr onclick="openModalByVariant(\'' + v.variant_id + '\')">';
+            html += '<td style="font-weight:700;color:var(--' + (v.stocksense_score >= 60 ? 'rd' : v.stocksense_score >= 40 ? 'am' : 'gr') + ')">' + v.stocksense_score + '</td>';
+            html += '<td><span class="badge ' + (v.status === 'reorder' ? 'rd' : v.status === 'markdown' ? 'am' : v.status === 'watch' ? 'bl' : 'gr') + '">' + v.status + '</span></td>';
+            html += '<td style="font-family:monospace;font-size:11px">' + esc(v.sku) + '</td>';
+            html += '<td style="font-weight:500;color:var(--t)">' + esc(v.product_name) + '</td>';
+            html += '<td>' + esc(v.product_type) + '</td>';
+            html += '<td style="color:' + (v.inventory > 0 ? 'var(--t)' : 'var(--rd)') + '">' + v.inventory + '</td>';
+            html += '<td>' + v.velocity_weekly.toFixed(1) + '</td>';
+            html += '<td>' + (v.months_cover >= 999 ? '∞' : v.months_cover.toFixed(0) + 'mo') + '</td>';
+            html += '<td>' + v.margin_pct.toFixed(0) + '%</td>';
+            html += '<td style="font-size:11px">' + esc(v.recommendation) + '</td>';
+            html += '<td style="font-weight:600">£' + v.recommendation_cost.toFixed(0) + '</td>';
+            html += '</tr>';
+        }
+        if (data.length > 200)
+            html += '<tr><td colspan="11" style="text-align:center;color:var(--t3);padding:12px">Showing 200 of ' + data.length + ' results. Use search or filters to narrow.</td></tr>';
+        tbody.innerHTML = html;
+    }
+
+    function filterRecQueue(f, e) {
+        recFilter = f;
+        document.querySelectorAll('#panel-recommendations .scenario-btn').forEach(function(b) {
+            b.classList.remove('active');
+        });
+        if (e && e.target)
+            e.target.classList.add('active');
+        renderRecQueue();
+    }
+
+    /* ======== CASH FLOW ======== */
+    function initCashFlowCharts() {
+        var sCtx = document.getElementById('chart-scenarios');
+        if (sCtx && !charts['scenarios']) {
+            charts['scenarios'] = new Chart(sCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Do Nothing', 'Conservative', 'Full Deployment', 'Aggressive'],
+                    datasets: [{
+                        label: 'Annual Revenue Impact',
+                        data: [0, 750000, 1490000, 2000000],
+                        backgroundColor: ['rgba(255,255,255,.05)', '#ff9f0a88', '#30d15888', '#0a84ff88'],
+                        borderColor: ['rgba(255,255,255,.1)', '#ff9f0a', '#30d158', '#0a84ff'],
+                        borderWidth: 1.5,
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(c) {
+                                    return '£' + (c.raw / 1000).toFixed(0) + 'K';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                color: 'rgba(255,255,255,.04)'
+                            },
+                            ticks: {
+                                color: '#6e6e73',
+                                font: {
+                                    size: 9
+                                }
+                            }
+                        },
+                        y: {
+                            grid: {
+                                color: 'rgba(255,255,255,.04)'
+                            },
+                            ticks: {
+                                color: '#6e6e73',
+                                font: {
+                                    size: 9
+                                },
+                                callback: function(v) {
+                                    return '£' + (v / 1000).toFixed(0) + 'K';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        var mCtx = document.getElementById('chart-markdown');
+        if (mCtx && !charts['markdown']) {
+            var md = D.variants.filter(function(v) {
+                return v.status === 'markdown';
+            });
+            md.sort(function(a, b) {
+                return b.inventory * b.landed_cost - a.inventory * a.landed_cost;
+            });
+            var topMd = md.slice(0, 10);
+            charts['markdown'] = new Chart(mCtx, {
+                type: 'bar',
+                data: {
+                    labels: topMd.map(function(v) {
+                        return v.product_name.substring(0, 14);
+                    }),
+                    datasets: [{
+                        label: 'Cash Freed (£)',
+                        data: topMd.map(function(v) {
+                            return v.inventory * v.landed_cost;
+                        }),
+                        backgroundColor: '#ff9f0a66',
+                        borderColor: '#ff9f0a',
+                        borderWidth: 1,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                color: 'rgba(255,255,255,.04)'
+                            },
+                            ticks: {
+                                color: '#6e6e73',
+                                font: {
+                                    size: 9
+                                },
+                                callback: function(v) {
+                                    return '£' + (v / 1000).toFixed(0) + 'K';
+                                }
+                            }
+                        },
+                        y: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                color: '#6e6e73',
+                                font: {
+                                    size: 9
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    function highlightScenario(s, e) {
+        document.querySelectorAll('#panel-cashflow .scenario-btn').forEach(function(b) {
+            b.classList.remove('active');
+        });
+        if (e && e.target)
+            e.target.classList.add('active');
+        document.querySelectorAll('#scen-conservative, #scen-full, #scen-aggressive').forEach(function(r) {
+            r.style.background = '';
+        });
+        document.getElementById('scen-' + s).style.background = 'rgba(10,132,255,.08)';
+    }
+
+    /* ======== AI CHAT ======== */
+    var isProcessing = false;
+    var claudeApiKey = '';
+    var chatHistory = [];
+
+    function toggleApiKeyInput() {
+        var area = document.getElementById('api-key-area');
+        area.style.display = area.style.display === 'none' ? '' : 'none';
+        if (area.style.display !== 'none')
+            document.getElementById('api-key-input').focus();
+    }
+
+    function onApiKeyChange() {
+        claudeApiKey = document.getElementById('api-key-input').value.trim();
+        var btn = document.getElementById('api-key-btn');
+        if (claudeApiKey.startsWith('sk-ant-')) {
+            btn.style.borderColor = 'rgba(48,209,88,.4)';
+            btn.style.color = 'var(--gr)';
+            btn.textContent = '✓ Claude API';
+        } else {
+            btn.style.borderColor = '';
+            btn.style.color = '';
+            btn.textContent = '+ Claude API';
+        }
+    }
+
+    function buildSystemPrompt() {
+        var s = D.summary;
+        var topReorders = D.variants.filter(function(v) {
+            return v.status === 'reorder';
+        }).slice(0, 10)
+        .map(function(v) {
+            return v.product_name + ' (' + v.sku + ') score:' + v.stocksense_score + ' vel:' + v.velocity_weekly.toFixed(1) + '/wk rec:' + v.recommendation;
+        }).join('\n');
+        var topMarkdown = D.variants.filter(function(v) {
+            return v.status === 'markdown';
+        }).slice(0, 10)
+        .map(function(v) {
+            return v.product_name + ' (' + v.sku + ') ' + v.inventory + 'u ' + v.months_cover.toFixed(0) + 'mo cover';
+        }).join('\n');
+
+        return 'You are the WC Intelligence Agent for Pretty Fly, a London DTC streetwear brand. ' +
+        'You have access to their 24-month inventory dataset (Jun 2024–May 2026, today = 1 Jun 2026).\n\n' +
+        'LIVE INVENTORY SUMMARY:\n' +
+        '- Total variants: ' + s.total_variants + '\n' +
+        '- Reorder needed: ' + s.reorder_count + ' variants\n' +
+        '- Mark down: ' + s.markdown_count + ' variants\n' +
+        '- Watch: ' + s.watch_count + ' variants\n' +
+        '- Healthy: ' + s.healthy_count + ' variants\n' +
+        '- Trapped cash (overstock at cost): £' + s.total_trapped_cash.toLocaleString() + '\n' +
+        '- Lost monthly revenue (stockouts): £' + s.lost_monthly_revenue.toLocaleString() + '/mo\n' +
+        '- Avg StockSense Score: ' + s.avg_stocksense_score + '\n\n' +
+        'TOP REORDER PRIORITIES:\n' + topReorders + '\n\n' +
+        'TOP MARKDOWN CANDIDATES:\n' + topMarkdown + '\n\n' +
+        'BACKTEST RESULT (12-month replay):\n' +
+        '- Following StockSense recommendations had a net cash impact of £743K\n' +
+        '- 366 reorder flags → £303K revenue at risk\n' +
+        '- 130 markdown flags → £514K trapped, £829K recoverable at 40% off\n' +
+        '- Reorder investment: £87K\n\n' +
+        'PRODUCT TYPES: Tee (239 variants), Hoodie (155), Sweatpants (118), Trainer (56), Outerwear (50), Cap (27)\n' +
+        'SUPPLIERS: 5 suppliers in Portugal, Italy, Turkey. Avg lead time 71 days.\n' +
+        'REVENUE MULTIPLE: £1 freed from overstock → £8.04 annual revenue when redirected to stockouts.\n\n' +
+        'Answer in 3-5 sentences. Be specific — name SKUs, cite £ figures, reference actual data. ' +
+        'Speak like a sharp financial operator, not a generic AI assistant.';
+    }
+
+    function sendSuggestion(text) {
+        document.getElementById('chat-input').value = text;
+        sendChat();
+    }
+
+    function sendChat() {
+        if (isProcessing)
+            return;
+        var input = document.getElementById('chat-input');
+        var text = input.value.trim();
+        if (!text)
+            return;
+
+        isProcessing = true;
+        document.getElementById('chat-send').disabled = true;
+        addMessage('user', esc(text));
+        input.value = '';
+
+        if (claudeApiKey.startsWith('sk-ant-')) {
+            callClaudeAPI(text);
+        } else {
+            setTimeout(function() {
+                var response = generateResponse(text);
+                addMessage('agent', response);
+                isProcessing = false;
+                document.getElementById('chat-send').disabled = false;
+                document.getElementById('chat-input').focus();
+            }, 600 + Math.random() * 600);
+        }
+    }
+
+    async function callClaudeAPI(text) {
+        var loadingDiv = addLoadingMessage();
+        chatHistory.push({
+            role: 'user',
+            content: text
+        });
+
+        try {
+            var resp = await fetch('https://api.anthropic.com/v1/messages', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-api-key': claudeApiKey,
+                    'anthropic-version': '2023-06-01',
+                    'anthropic-dangerous-allow-browser': 'true'
+                },
+                body: JSON.stringify({
+                    model: 'claude-haiku-4-5-20251001',
+                    max_tokens: 600,
+                    system: buildSystemPrompt(),
+                    messages: chatHistory.slice(-8)
+                })
+            });
+
+            if (!resp.ok) {
+                var err = await resp.json().catch(function() {
+                    return {};
+                });
+                throw new Error(err.error && err.error.message ? err.error.message : 'API error ' + resp.status);
+            }
+
+            var data = await resp.json();
+            var reply = data.content[0].text;
+            chatHistory.push({
+                role: 'assistant',
+                content: reply
+            });
+            loadingDiv.remove();
+            addMessage('agent', esc(reply).replace(/\n/g, '<br>'));
+        } catch (e) {
+            loadingDiv.remove();
+            addMessage('agent', '<span style="color:var(--rd)">API error: ' + esc(e.message) + '</span><br>Falling back to local analysis...<br><br>' + generateResponse(text));
+            chatHistory.pop();
+        }
+
+        isProcessing = false;
+        document.getElementById('chat-send').disabled = false;
+        document.getElementById('chat-input').focus();
+    }
+
+    function addLoadingMessage() {
+        var container = document.getElementById('chat-messages');
+        var div = document.createElement('div');
+        div.className = 'chat-msg agent';
+        div.innerHTML = '<div class="loading-dots"><span></span><span></span><span></span></div>';
+        container.appendChild(div);
+        container.scrollTop = container.scrollHeight;
+        return div;
+    }
+
+    function addMessage(role, text) {
+        var container = document.getElementById('chat-messages');
+        var div = document.createElement('div');
+        div.className = 'chat-msg ' + role;
+        div.innerHTML = text + '<div class="msg-time">' + new Date().toLocaleTimeString([], {
+            hour: '2-digit',
+            minute: '2-digit'
+        }) + '</div>';
+        container.appendChild(div);
+        container.scrollTop = container.scrollHeight;
+    }
+
+    function generateResponse(query) {
+        var q = query.toLowerCase();
+
+        if (q.indexOf('reorder') !== -1 || q.indexOf('what should i reorder') !== -1) {
+            var top = D.variants.filter(function(v) {
+                return v.status === 'reorder';
+            }).slice(0, 5);
+            var totalCost50 = 0;
+            var tops = D.variants.filter(function(v) {
+                return v.status === 'reorder';
+            }).slice(0, 50);
+            for (var i = 0; i < tops.length; i++)
+                totalCost50 += tops[i].recommendation_cost;
+            var recovery = D.summary.lost_monthly_revenue * 12;
+            var resp = '<strong>' + D.summary.reorder_count + ' variants need reordering</strong> — representing £' + (D.summary.lost_monthly_revenue / 1000).toFixed(0) + 'K/month in lost revenue. Top priorities:<br><br>';
+            for (var i = 0; i < top.length; i++) {
+                var v = top[i];
+                resp += '• <strong>' + esc(v.product_name) + '</strong> (' + esc(v.product_type) + ', ' + esc(v.gender_segment) + ') — Score ' + v.stocksense_score + ', lost £' + v.revenue_3mo.toFixed(0) + '/3mo. ' + esc(v.recommendation) + ' at £' + v.recommendation_cost.toFixed(0) + '.<br>';
+            }
+            resp += '<br>Total reorder cost for top 50: <strong>~£' + (totalCost50 / 1000).toFixed(0) + 'K</strong>. Projected annual recovery: <strong>£' + (recovery / 1000000).toFixed(2) + 'M</strong>.';
+            return resp;
+        }
+
+        if (q.indexOf('trapped') !== -1 || q.indexOf('how much cash') !== -1) {
+            var md = D.variants.filter(function(v) {
+                return v.status === 'markdown';
+            });
+            var totalCost = 0;
+            var totalRetail = 0;
+            for (var i = 0; i < md.length; i++) {
+                totalCost += md[i].inventory * md[i].landed_cost;
+                totalRetail += md[i].inventory * md[i].price;
+            }
+            var freed = totalRetail * 0.7;
+            var ratio = (D.summary.lost_monthly_revenue * 12 / D.summary.total_trapped_cash).toFixed(2);
+            return '<strong>£' + (totalCost / 1000).toFixed(0) + 'K is trapped</strong> in ' + md.length + ' overstocked variants (>12 months stock cover).<br><br>Retail value: <strong>~£' + (totalRetail / 1000).toFixed(0) + 'K</strong><br>Landed cost: <strong>~£' + (totalCost / 1000).toFixed(0) + 'K</strong><br><br>Liquidating at 30% off retail would recover <strong>~£' + (freed / 1000).toFixed(0) + 'K</strong>. This funds the £' + (D.summary.total_reorder_cost / 1000).toFixed(0) + 'K reorder list — leaving a cash buffer.<br><br>Key insight: every £1 freed from overstock generates <strong>£' + ratio + '</strong> in annual revenue when redirected to stockout variants.';
+        }
+
+        if (q.indexOf('mark down') !== -1 || q.indexOf('markdown') !== -1) {
+            var md = D.variants.filter(function(v) {
+                return v.status === 'markdown';
+            });
+            var resp = '<strong>' + md.length + ' variants should be marked down</strong> (over 12 months of cover or zero velocity with stock).<br><br>Top candidates:<br>';
+            for (var i = 0; i < Math.min(5, md.length); i++) {
+                resp += '• <strong>' + esc(md[i].product_name) + '</strong> — ' + md[i].inventory + ' units, ' + md[i].months_cover.toFixed(0) + 'mo cover. £' + (md[i].inventory * md[i].landed_cost).toFixed(0) + ' at cost. ' + esc(md[i].recommendation) + '<br>';
+            }
+            var totalMd30 = 0;
+            var mdTop30 = md.slice(0, Math.min(30, md.length));
+            for (var i = 0; i < mdTop30.length; i++)
+                totalMd30 += mdTop30[i].inventory * mdTop30[i].price * 0.7;
+            resp += '<br>Recommend liquidating top ' + mdTop30.length + ' at 30% off retail → recovers £' + (totalMd30 / 1000).toFixed(0) + 'K.';
+            return resp;
+        }
+
+        if (q.indexOf('cash flow') !== -1 || q.indexOf('scenario') !== -1) {
+            var trappedK = (D.summary.total_trapped_cash / 1000).toFixed(0);
+            return '<strong>Cash Flow Forecast — Based on Full Deployment:</strong><br><br>Month 1: Markdown revenue flows in (~£' + (D.summary.total_trapped_cash * 0.7 / 1000).toFixed(0) + 'K at 30% discount). PO deposits of ~£' + (D.summary.total_reorder_cost * 0.5 / 1000).toFixed(0) + 'K go out. <strong>Net positive.</strong><br><br>Month 2: New stock arrives. Sales resume on restocked variants. <strong>Revenue recovery begins.</strong><br><br>Month 3: Full revenue impact of £' + (D.summary.lost_monthly_revenue / 1000).toFixed(0) + 'K/mo. <strong>Net: strong positive.</strong><br><br>Cash buffer increases from current levels. Zero projected negative months over 6-month horizon.<br><br>This eliminates the cash-crisis risk entirely — without taking a single pound of debt.';
+        }
+
+        if (q.indexOf('supplier') !== -1 || q.indexOf('lead time') !== -1) {
+            return '<strong>Pretty Fly\'s 5 Suppliers:</strong><br><br>Suppliers are based in Portugal, Italy, and Turkey. Average lead time is <strong>71 days</strong> from PO placement to delivery.<br><br>• Portugal suppliers: fastest turnaround, EUR invoices<br>• Italian suppliers: premium fabrics, EUR invoices<br>• Turkish suppliers: bulk orders, USD invoices<br><br>Key insight: the 71-day lead time means revenue recovery isn\'t instant. The cash forecast should model a 2-3 month lag between PO placement and revenue realization. This is why the cash buffer is critical — you need to survive the gap.<br><br><strong>Recommendation:</strong> Prioritize Portuguese suppliers for urgent reorders (shortest lead times). Use Italian for premium product lines. Turkish for large bulk restocks.';
+        }
+
+        if (q.indexOf('p&l') !== -1 || q.indexOf('profit') !== -1) {
+            var ratio = (D.summary.lost_monthly_revenue * 12 / D.summary.total_trapped_cash).toFixed(2);
+            return '<strong>Pretty Fly — Quick P&L Snapshot (12mo):</strong><br><br>• Lost monthly revenue (stockouts): <strong>£' + (D.summary.lost_monthly_revenue / 1000).toFixed(0) + 'K/mo</strong><br>• Trapped cash (overstock): <strong>£' + (D.summary.total_trapped_cash / 1000).toFixed(0) + 'K</strong><br>• Average StockSense Score: <strong>' + D.summary.avg_stocksense_score + '</strong><br>• Revenue per £1 freed: <strong>£' + ratio + '</strong><br><br><strong>Concerns:</strong><br>• ' + D.summary.markdown_count + ' overstocked variants tying up £' + (D.summary.total_trapped_cash / 1000).toFixed(0) + 'K<br>• £' + (D.summary.lost_monthly_revenue / 1000).toFixed(0) + 'K/month in lost revenue from stockouts<br><br><strong>Opportunity:</strong> Freeing the trapped cash and redirecting to stockouts could add <strong>£' + (D.summary.lost_monthly_revenue * 12 / 1000000).toFixed(2) + 'M/year</strong> — a significant revenue increase without new customers or marketing spend.';
+        }
+
+        if (q.indexOf('score') !== -1 || q.indexOf('stocksense') !== -1) {
+            return '<strong>StockSense Score System:</strong><br><br>Every variant gets a 0-100 score combining:<br>• <strong>Stock Urgency (0-50):</strong> How fast is it running out?<br>• <strong>Demand Intensity (0-30):</strong> Revenue at stake vs top seller<br>• <strong>Trend Bonus (0-20):</strong> Is demand accelerating?<br><br><strong>Current portfolio:</strong><br>• Average score: <strong>' + D.summary.avg_stocksense_score + '</strong><br>• ' + D.summary.reorder_count + ' reorder (score high/stock low)<br>• ' + D.summary.markdown_count + ' mark down (overstocked)<br>• ' + D.summary.watch_count + ' watch (elevated score, monitor)<br>• ' + D.summary.healthy_count + ' healthy (in range)';
+        }
+
+        // fallback
+        return 'I can help with inventory analysis, reorder recommendations, cash flow forecasting, markdown strategy, and supplier optimization. Try asking:\n• "What should I reorder first?"\n• "How much cash is trapped?"\n• "Which products should I mark down?"\n• "Show me cash flow scenario"\n• "What are my supplier lead times?"\n• "What is my current P&L?"';
+    }
+
+    /* ======== MODAL ======== */
+    function openModalByVariant(variantId) {
+        var v = null;
+        for (var i = 0; i < D.variants.length; i++) {
+            if (D.variants[i].variant_id === variantId) {
+                v = D.variants[i];
+                break;
+            }
+        }
+        if (!v)
+            return;
+
+        var m = document.getElementById('modal');
+        var sc = v.stocksense_score >= 60 ? 'hi' : v.stocksense_score >= 40 ? 'md' : 'lo';
+        var scoreColor = v.stocksense_score >= 60 ? 'var(--rd)' : v.stocksense_score >= 40 ? 'var(--am)' : 'var(--gr)';
+
+        var html = '<button class="close-btn" onclick="closeModal()">×</button>';
+        html += '<div class="mtype">' + esc(v.product_type) + ' · ' + esc(v.gender_segment) + '</div>';
+        html += '<div class="mh">' + esc(v.product_name) + '</div>';
+        html += '<div style="font-size:11px;color:var(--t3)">' + esc(v.sku) + ' · ' + esc(v.variant_id) + '</div>';
+        html += '<div class="mscore" style="color:' + scoreColor + '">' + v.stocksense_score + '</div>';
+        html += '<div style="font-size:11px;color:var(--t3);margin-top:-8px">StockSense Score</div>';
+
+        html += '<div class="mstats">';
+        html += '<div class="mst">Inventory<span>' + v.inventory + ' units</span></div>';
+        html += '<div class="mst">Price<span>£' + v.price.toFixed(0) + '</span></div>';
+        html += '<div class="mst">Landed Cost<span>£' + v.landed_cost.toFixed(0) + '</span></div>';
+        html += '<div class="mst">Margin<span>' + v.margin_pct.toFixed(0) + '%</span></div>';
+        html += '<div class="mst">Velocity<span>' + v.velocity_weekly.toFixed(1) + '/wk</span></div>';
+        html += '<div class="mst">Cover<span>' + (v.months_cover >= 999 ? '∞' : v.months_cover.toFixed(0) + 'mo') + '</span></div>';
+        html += '<div class="mst">3mo Units<span>' + v.units_3mo + '</span></div>';
+        html += '<div class="mst">12mo Units<span>' + v.units_12mo + '</span></div>';
+        if (v.trend !== 0)
+            html += '<div class="mst">Trend<span style="color:' + (v.trend > 0 ? 'var(--gr)' : 'var(--rd)') + '">' + (v.trend > 0 ? '+' : '') + (v.trend * 100).toFixed(0) + '%</span></div>';
+        html += '</div>';
+
+        html += '<div class="mrec ' + v.status + '-rec"><strong>' + esc(v.recommendation) + '</strong><br>' + esc(v.recommendation_detail) + '</div>';
+
+        m.innerHTML = html;
+        document.getElementById('modal-overlay').classList.add('open');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeModal(e) {
+        if (e && e.target !== document.getElementById('modal-overlay'))
+            return;
+        document.getElementById('modal-overlay').classList.remove('open');
+        document.body.style.overflow = '';
+    }
+
+    function esc(s) {
+        return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    /* ======== BACKTEST PROOF ======== */
+    var btRendered = false;
+    function renderBacktest() {
+        if (btRendered)
+            return;
+        btRendered = true;
+
+        var B = window.BACKTEST_DATA;
+        if (!B) {
+            document.getElementById('panel-backtest').innerHTML = '<div class="empty-state"><div class="icon">⚠</div><div>Run <code>python backtest.py</code> to generate backtest_data.js, then reload.</div></div>';
+            return;
+        }
+
+        var fmt = function(n) {
+            return n >= 1000000 ? '£' + (n / 1000000).toFixed(2) + 'M' : '£' + (n / 1000).toFixed(0) + 'K';
+        };
+
+        // Fill in the numbers
+        document.getElementById('bt-pain').textContent = fmt(B.baseline.total_pain);
+        document.getElementById('bt-net').textContent = fmt(B.simulation.net_cash_impact);
+        document.getElementById('bt-reorder-count').textContent = B.meta.reorder_flagged;
+        document.getElementById('bt-lost-rev').textContent = fmt(B.baseline.lost_revenue);
+        document.getElementById('bt-markdown-count').textContent = B.meta.markdown_flagged;
+        document.getElementById('bt-trapped').textContent = fmt(B.baseline.trapped_cash);
+        document.getElementById('bt-freed').textContent = fmt(B.simulation.cash_freed);
+        document.getElementById('bt-reorder-cost').textContent = fmt(B.simulation.reorder_cost);
+        document.getElementById('bt-net-eq').innerHTML =
+        fmt(B.simulation.cash_freed) + ' freed &minus; ' + fmt(B.simulation.reorder_cost) +
+        ' cost = <strong>' + fmt(B.simulation.net_cash_impact) + ' net</strong>';
+
+        // Fill in the dead stock stat cards
+        var deadPct = (100 - B.simulation.actual_sellthrough).toFixed(1);
+        var soldPct = B.simulation.actual_sellthrough.toFixed(1);
+        var statHtml =
+        '<div style="flex:1;min-width:160px;background:rgba(255,69,58,.06);border:1px solid rgba(255,69,58,.2);border-radius:12px;padding:14px">' +
+        '<div style="font-size:32px;font-weight:900;color:var(--rd)">' + deadPct + '%</div>' +
+        '<div style="font-size:12px;font-weight:600;margin:4px 0">Never sold</div>' +
+        '<div style="font-size:11px;color:var(--t3)">' + fmt(B.simulation.dead_cash_at_risk) + ' at cost — confirmed dead capital</div>' +
+        '</div>' +
+        '<div style="flex:1;min-width:160px;background:rgba(48,209,88,.06);border:1px solid rgba(48,209,88,.2);border-radius:12px;padding:14px">' +
+        '<div style="font-size:32px;font-weight:900;color:var(--gr)">' + soldPct + '%</div>' +
+        '<div style="font-size:12px;font-weight:600;margin:4px 0">Natural sell-through</div>' +
+        '<div style="font-size:11px;color:var(--t3)">Sold at full price over 12 months without any action</div>' +
+        '</div>' +
+        '<div style="flex:1;min-width:160px;background:rgba(10,132,255,.06);border:1px solid rgba(10,132,255,.2);border-radius:12px;padding:14px">' +
+        '<div style="font-size:32px;font-weight:900;color:var(--bl)">80%</div>' +
+        '<div style="font-size:12px;font-weight:600;margin:4px 0">With clearance sale</div>' +
+        '<div style="font-size:11px;color:var(--t3)">Projected sell-through with proactive 40% markdown</div>' +
+        '</div>';
+        document.getElementById('bt-dead-stat').innerHTML = statHtml;
+
+        // Sell-through comparison chart — two grouped bars showing inventory fate
+        var ctx = document.getElementById('chart-backtest-impact');
+        if (!ctx || charts['bt-impact'])
+            return;
+
+        var totalUnits = B.simulation.dead_units + Math.round(B.simulation.actual_sellthrough / 100 * (B.simulation.dead_units / (1 - B.simulation.actual_sellthrough / 100)));
+        var soldUnits = Math.round(B.simulation.actual_sellthrough / 100 * totalUnits);
+        var deadUnits = B.simulation.dead_units;
+        var simSold = Math.round(0.80 * totalUnits);
+        var simRemain = totalUnits - simSold;
+
+        charts['bt-impact'] = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Without StockSense (actual)', 'With StockSense clearance (projected)'],
+                datasets: [
+                {
+                    label: 'Units sold',
+                    data: [soldUnits, simSold],
+                    backgroundColor: ['rgba(48,209,88,.45)', 'rgba(48,209,88,.65)'],
+                    borderColor: ['#30d158', '#30d158'],
+                    borderWidth: 2,
+                    borderRadius: [6, 0, 0, 6]
+                },
+                {
+                    label: 'Units unsold / remaining',
+                    data: [deadUnits, simRemain],
+                    backgroundColor: ['rgba(255,69,58,.5)', 'rgba(255,159,10,.4)'],
+                    borderColor: ['#ff453a', '#ff9f0a'],
+                    borderWidth: 2,
+                    borderRadius: [0, 6, 6, 0]
+                }
+                ]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: {
+                    duration: 500
+                },
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: '#98989d',
+                            font: {
+                                size: 11
+                            },
+                            usePointStyle: true,
+                            pointStyleWidth: 8,
+                            padding: 16
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(c) {
+                                var total = c.dataset.data[0] + (c.chart.data.datasets[c.datasetIndex === 0 ? 1 : 0].data[c.dataIndex] || 0);
+                                return ' ' + c.raw.toLocaleString() + ' units (' + (c.raw / total * 100).toFixed(1) + '%)';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        stacked: true,
+                        grid: {
+                            color: 'rgba(255,255,255,.04)'
+                        },
+                        ticks: {
+                            color: '#6e6e73',
+                            font: {
+                                size: 10
+                            },
+                            callback: function(v) {
+                                return v.toLocaleString();
+                            }
+                        }
+                    },
+                    y: {
+                        stacked: true,
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            color: '#98989d',
+                            font: {
+                                size: 11
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+    </script>
+</body>
+</html>

@@ -1,0 +1,1899 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StockSense — Pretty Fly Inventory Intelligence</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+*, *::before, *::after { box-sizing:border-box; margin:0; padding:0 }
+
+:root {
+  --bg:#000; --bg2:rgba(28,28,30,.55); --bg3:rgba(28,28,30,.85);
+  --b:rgba(255,255,255,.07); --bh:rgba(255,255,255,.14);
+  --t:#f5f5f7; --t2:#98989d; --t3:#636366;
+  --bl:#0a84ff; --bl2:rgba(10,132,255,.14);
+  --gr:#30d158; --gr2:rgba(48,209,88,.12);
+  --rd:#ff453a; --rd2:rgba(255,69,58,.12);
+  --am:#ff9f0a; --am2:rgba(255,159,10,.12);
+  --pu:#bf5af2; --pu2:rgba(191,90,242,.12);
+  --pk:#ff375f; --pk2:rgba(255,55,95,.12);
+}
+
+body {
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+  background:var(--bg); color:var(--t);
+  -webkit-font-smoothing:antialiased;
+  overflow:hidden; height:100vh;
+}
+
+button { font-family:inherit; cursor:pointer; border:none; outline:none }
+
+.app { display:flex; height:100vh; width:100% }
+
+/* ── SIDEBAR ── */
+.sidebar {
+  width:380px; min-width:380px; border-right:1px solid var(--b);
+  display:flex; flex-direction:column;
+  background:rgba(0,0,0,.45);
+  backdrop-filter:blur(24px); -webkit-backdrop-filter:blur(24px);
+  z-index:10;
+}
+.sidebar-head {
+  padding:18px 20px 16px; border-bottom:1px solid var(--b); flex-shrink:0;
+}
+.bot-head-row { display:flex; align-items:center; gap:12px }
+.bot-id { flex:1; min-width:0 }
+.sidebar-head h2 { font-size:16px; font-weight:800; letter-spacing:-.3px }
+.sidebar-head h2 span { color:var(--gr) }
+.sidebar-head .sub { font-size:10px; color:var(--t3); margin-top:3px }
+.settings-btn {
+  flex-shrink:0; width:30px; height:30px; border-radius:9px;
+  background:var(--bg2); border:1px solid var(--b); color:var(--t2);
+  font-size:14px; cursor:pointer; transition:all .2s; line-height:1;
+  display:flex; align-items:center; justify-content:center;
+}
+.settings-btn:hover { color:var(--t); border-color:var(--bh); background:rgba(255,255,255,.06); transform:rotate(35deg) }
+
+/* ── STOCKSENSE ROBOT ── */
+.ss-bot { width:46px; height:50px; flex-shrink:0; overflow:visible; animation:ssBob 3.2s ease-in-out infinite }
+@keyframes ssBob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-2.5px)} }
+.ss-eye { transform-box:fill-box; transform-origin:center; animation:ssBlink 4.6s infinite }
+@keyframes ssBlink { 0%,92%,100%{transform:scaleY(1)} 95%{transform:scaleY(.12)} }
+.ss-ant { transform-box:fill-box; transform-origin:center; animation:ssAnt 3.2s ease-in-out infinite }
+@keyframes ssAnt { 0%,100%{opacity:.45} 50%{opacity:1} }
+.ss-eyes, .ss-parcel { transform-box:fill-box; transform-origin:center }
+/* working state — subtle + quirky */
+.ss-bot.working { animation:ssBobFast 1.3s ease-in-out infinite }
+@keyframes ssBobFast { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-1.5px)} }
+.ss-bot.working .ss-ant { animation:ssAntWork .55s ease-in-out infinite }
+@keyframes ssAntWork { 0%,100%{opacity:.3;transform:scale(.8)} 50%{opacity:1;transform:scale(1.2)} }
+.ss-bot.working .ss-eyes { animation:ssScan 1.05s ease-in-out infinite }
+@keyframes ssScan { 0%,100%{transform:translateX(-1.3px)} 50%{transform:translateX(1.3px)} }
+.ss-bot.working .ss-parcel { animation:ssWiggle .85s ease-in-out infinite }
+@keyframes ssWiggle { 0%,100%{transform:rotate(-2.5deg)} 50%{transform:rotate(2.5deg)} }
+
+/* ── SETTINGS MODAL ── */
+.settings-modal {
+  background:#0d0d0d; border:1px solid var(--b); border-radius:20px;
+  max-width:460px; width:100%; padding:28px;
+}
+.settings-modal .close { float:right; background:none; border:none; color:var(--t2); font-size:24px; cursor:pointer; line-height:1; padding:0 0 8px 8px }
+.settings-modal h2 { font-size:18px; font-weight:800; letter-spacing:-.3px; margin-bottom:4px }
+.settings-modal .msub { font-size:12px; color:var(--t3); line-height:1.6; margin-bottom:20px }
+.set-label { font-size:11px; font-weight:600; color:var(--t2); display:block; margin-bottom:8px }
+
+.chat-body { flex:1; display:flex; flex-direction:column; overflow:hidden }
+.chat-msgs {
+  flex:1; overflow-y:auto; padding:16px;
+  display:flex; flex-direction:column; gap:10px;
+}
+.chat-msgs::-webkit-scrollbar { width:4px }
+.chat-msgs::-webkit-scrollbar-track { background:transparent }
+.chat-msgs::-webkit-scrollbar-thumb { background:rgba(255,255,255,.06); border-radius:2px }
+
+.msg {
+  max-width:90%; font-size:12px; line-height:1.55;
+  padding:10px 14px; border-radius:16px;
+  animation:slide .25s ease;
+}
+@keyframes slide { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+.msg.user { align-self:flex-end; background:var(--bl); color:#fff; border-bottom-right-radius:4px }
+.msg.agent { align-self:flex-start; background:rgba(255,255,255,.06); color:var(--t); border-bottom-left-radius:4px }
+.msg .time { font-size:9px; margin-top:4px }
+.msg.user .time { color:rgba(255,255,255,.4) }
+.msg.agent .time { color:var(--t3) }
+
+.chat-sugs { display:flex; flex-wrap:wrap; gap:6px; padding:8px 16px 0 }
+.sug {
+  padding:5px 12px; border-radius:14px; font-size:10px;
+  background:rgba(255,255,255,.04); color:var(--t2);
+  border:1px solid var(--b); cursor:pointer;
+  transition:all .15s; white-space:nowrap;
+}
+.sug:hover { color:var(--t); border-color:var(--bh); background:rgba(255,255,255,.08) }
+
+.api-key-box {
+  padding:10px 16px 0; display:flex; flex-direction:column; gap:6px;
+}
+.api-key-row { display:flex; gap:6px }
+.api-key-row input {
+  min-width:0; flex:1; background:var(--bg2); border:1px solid var(--b);
+  border-radius:16px; padding:8px 12px; color:var(--t);
+  font-size:11px; outline:none; font-family:inherit;
+}
+.api-key-row input:focus { border-color:var(--bl) }
+.api-key-row button {
+  padding:7px 10px; border-radius:14px; font-size:10px; font-weight:700;
+  background:rgba(255,255,255,.04); color:var(--t2); border:1px solid var(--b);
+  transition:all .15s; white-space:nowrap;
+}
+.api-key-row button:hover { color:var(--t); border-color:var(--bh); background:rgba(255,255,255,.08) }
+.api-key-row button.primary { background:var(--bl); color:#fff; border-color:var(--bl) }
+.api-status { font-size:9px; color:var(--t3); padding-left:2px }
+.api-status.on { color:var(--gr) }
+.api-status.err { color:var(--rd) }
+
+.chat-input-row {
+  padding:12px 16px; border-top:1px solid var(--b); display:flex; gap:8px;
+}
+.chat-input-row input {
+  flex:1; background:var(--bg2); border:1px solid var(--b);
+  border-radius:20px; padding:10px 16px; color:var(--t);
+  font-size:12px; outline:none; font-family:inherit;
+}
+.chat-input-row input:focus { border-color:var(--bl) }
+.chat-input-row .send {
+  padding:8px 18px; border-radius:20px; font-size:12px; font-weight:600;
+  background:var(--bl); color:#fff; transition:opacity .2s;
+}
+.chat-input-row .send:hover { opacity:.85 }
+.chat-input-row .send:disabled { opacity:.4; cursor:default }
+
+.loading { display:inline-flex; gap:3px }
+.loading span { width:5px; height:5px; background:var(--t3); border-radius:50%; animation:bounce 1.2s infinite }
+.loading span:nth-child(2) { animation-delay:.2s }
+.loading span:nth-child(3) { animation-delay:.4s }
+@keyframes bounce { 0%,80%,100%{transform:scale(.6);opacity:.4} 40%{transform:scale(1);opacity:1} }
+
+/* ── MAIN ── */
+.main { flex:1; display:flex; flex-direction:column; overflow:hidden; min-width:0 }
+
+/* ── HEADER ── */
+.header {
+  flex-shrink:0; display:flex; align-items:center; justify-content:space-between;
+  padding:14px 24px; gap:14px;
+  border-bottom:1px solid var(--b);
+  background:rgba(0,0,0,.75);
+  backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
+  z-index:20;
+}
+.logo { font-size:20px; font-weight:900; letter-spacing:-.5px; white-space:nowrap }
+.logo span { color:var(--gr) }
+.header-meta { font-size:11px; color:var(--t3); white-space:nowrap }
+.method-btn {
+  margin-left:auto; font-size:11px; font-weight:600; color:var(--t2);
+  background:var(--bg2); border:1px solid var(--b); border-radius:16px;
+  padding:7px 14px; cursor:pointer; transition:all .2s; white-space:nowrap;
+}
+.method-btn:hover { color:var(--t); border-color:var(--bh); background:rgba(255,255,255,.05) }
+
+/* ── METHODOLOGY MODAL ── */
+.method-modal {
+  background:#0d0d0d; border:1px solid var(--b); border-radius:20px;
+  max-width:780px; width:100%; max-height:88vh; overflow-y:auto; padding:32px;
+}
+.method-modal .close { float:right; background:none; border:none; color:var(--t2); font-size:24px; cursor:pointer; line-height:1; padding:0 0 8px 8px }
+.method-modal h2 { font-size:22px; font-weight:800; letter-spacing:-.4px; margin-bottom:4px }
+.method-modal .msub { font-size:12px; color:var(--t3); margin-bottom:22px; line-height:1.6 }
+.method-sec { margin-bottom:26px }
+.method-sec h4 {
+  font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:1px;
+  color:var(--bl); margin-bottom:12px; padding-bottom:7px; border-bottom:1px solid var(--b);
+}
+.method-sec p { font-size:13px; color:var(--t2); line-height:1.7; margin-bottom:10px }
+.method-sec p strong { color:var(--t) }
+.method-sec ul { list-style:none; margin:0 0 8px }
+.method-sec li { font-size:12.5px; color:var(--t2); line-height:1.65; padding:4px 0 4px 18px; position:relative }
+.method-sec li::before { content:'\2014'; position:absolute; left:0; color:var(--t3) }
+.method-sec li strong { color:var(--t); font-weight:600 }
+.method-sec code {
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:11.5px;
+  background:rgba(255,255,255,.05); padding:2px 6px; border-radius:5px; color:var(--bl);
+}
+.method-glass {
+  background:rgba(48,209,88,.06); border:1px solid rgba(48,209,88,.2);
+  border-radius:12px; padding:14px 18px; margin-bottom:22px;
+  font-size:12.5px; color:var(--t2); line-height:1.65;
+}
+.method-glass strong { color:var(--gr) }
+.method-assume { background:rgba(255,159,10,.05); border-left:3px solid var(--am); border-radius:10px; padding:14px 18px }
+.method-assume li::before { color:var(--am) }
+
+/* ── TABS ── */
+.tabs {
+  flex-shrink:0; padding:10px 24px; display:flex; gap:6px; align-items:center;
+  border-bottom:1px solid var(--b); background:rgba(0,0,0,.5); overflow-x:auto;
+}
+.tab {
+  font-size:11px; font-weight:600; padding:7px 18px; border-radius:18px;
+  background:transparent; color:var(--t2); transition:all .2s; white-space:nowrap;
+}
+.tab:hover { color:var(--t); background:rgba(255,255,255,.04) }
+.tab.on { background:var(--bl); color:#fff }
+.search {
+  background:var(--bg2); border:1px solid var(--b); border-radius:18px;
+  padding:7px 16px; color:var(--t); font-size:12px; width:200px;
+  outline:none; font-family:inherit; margin-left:auto; flex-shrink:0;
+}
+.search:focus { border-color:var(--bl) }
+
+/* ── CONTENT ── */
+.content {
+  flex:1; overflow-y:auto; overflow-x:hidden; padding:20px 24px 40px;
+}
+.content::-webkit-scrollbar { width:4px }
+.content::-webkit-scrollbar-track { background:transparent }
+.content::-webkit-scrollbar-thumb { background:rgba(255,255,255,.08); border-radius:2px }
+
+.panel { display:none }
+.panel.on { display:block }
+
+/* ── DASHBOARD ── */
+.hero { margin-bottom:24px }
+.hero h1 { font-size:26px; font-weight:900; letter-spacing:-.6px; line-height:1.15 }
+.hero p { font-size:13px; color:var(--t3); margin-top:6px; line-height:1.5 }
+
+/* ── HOW IT WORKS ── */
+.how-card { background:var(--bg2); border:1px solid var(--b); border-radius:18px; padding:24px; margin-bottom:20px }
+.how-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:8px; flex-wrap:wrap }
+.how-head h3 { font-size:16px; font-weight:700; letter-spacing:-.2px }
+.how-pill { font-size:10px; font-weight:600; color:var(--bl); background:var(--bl2); border:1px solid rgba(10,132,255,.25); padding:4px 11px; border-radius:20px; white-space:nowrap }
+.how-lead { font-size:13px; color:var(--t2); line-height:1.6; margin-bottom:18px; max-width:760px }
+.how-steps { display:grid; grid-template-columns:repeat(4,1fr); gap:14px }
+.how-step { display:flex; gap:11px; font-size:11.5px; color:var(--t2); line-height:1.5 }
+.how-step strong { color:var(--t); font-weight:600 }
+.how-n { width:24px; height:24px; flex-shrink:0; border-radius:50%; background:rgba(10,132,255,.14); color:var(--bl); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700 }
+@media(max-width:900px){ .how-steps { grid-template-columns:1fr 1fr } }
+@media(max-width:560px){ .how-steps { grid-template-columns:1fr } }
+
+.problem-row { display:flex; gap:14px; margin-bottom:20px }
+.problem {
+  flex:1; border-radius:18px; padding:26px 30px; border:1px solid;
+}
+.problem.over { background:rgba(255,69,58,.04); border-color:rgba(255,69,58,.2) }
+.problem.out  { background:rgba(255,159,10,.04); border-color:rgba(255,159,10,.2) }
+
+.problem .tag { font-size:9px; text-transform:uppercase; letter-spacing:1.2px; font-weight:700; margin-bottom:10px }
+.problem.over .tag { color:var(--rd) }
+.problem.out  .tag { color:var(--am) }
+
+.problem h3 { font-size:14px; font-weight:600; color:var(--t2); margin-bottom:10px }
+.problem .big { font-size:58px; font-weight:900; letter-spacing:-2px; line-height:1 }
+.problem.over .big { color:var(--rd) }
+.problem.out  .big { color:var(--am) }
+
+.problem .desc { font-size:12px; color:var(--t2); line-height:1.6; margin:12px 0 }
+.problem .note { font-size:11px; color:var(--t3); line-height:1.6; border-top:1px solid rgba(255,255,255,.07); padding-top:14px; margin-top:14px }
+
+.health-block {
+  display:flex; gap:14px; background:var(--bg2); border:1px solid var(--b);
+  border-radius:18px; padding:24px; margin-bottom:20px;
+}
+.health-chart { flex:1.3; min-width:0 }
+.health-chart h3 { font-size:14px; font-weight:700; margin-bottom:3px }
+.health-chart .sub { font-size:10px; color:var(--t3); margin-bottom:14px }
+
+.health-legend { flex:1; display:grid; grid-template-columns:1fr 1fr; gap:10px; align-content:center }
+.hl {
+  padding:14px 16px; border-radius:12px; border:1px solid var(--b);
+}
+.hl.rd { border-color:rgba(255,69,58,.2); background:rgba(255,69,58,.04) }
+.hl.am { border-color:rgba(255,159,10,.2); background:rgba(255,159,10,.04) }
+.hl.bl { border-color:rgba(10,132,255,.2); background:rgba(10,132,255,.04) }
+.hl.gr { border-color:rgba(48,209,88,.2); background:rgba(48,209,88,.04) }
+
+.hl .num { font-size:30px; font-weight:800; line-height:1 }
+.hl.rd .num { color:var(--rd) }
+.hl.am .num { color:var(--am) }
+.hl.bl .num { color:var(--bl) }
+.hl.gr .num { color:var(--gr) }
+
+.hl .lbl { font-size:12px; font-weight:600; margin:4px 0 3px }
+.hl .dsc { font-size:10px; color:var(--t3); line-height:1.4 }
+
+.top5-card {
+  background:var(--bg2); border:1px solid var(--b);
+  border-radius:18px; padding:22px;
+}
+.top5-card h3 { font-size:15px; font-weight:700; margin-bottom:4px }
+.top5-card .sub { font-size:11px; color:var(--t3); margin-bottom:16px }
+
+.top5-row {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:12px 0; border-bottom:1px solid rgba(255,255,255,.04);
+  cursor:pointer; transition:background .15s;
+}
+.top5-row:last-child { border-bottom:none }
+.top5-row:hover { background:rgba(255,255,255,.015) }
+.top5-name { font-size:13px; font-weight:600; color:var(--t2) }
+.top5-meta { font-size:10px; color:var(--t3); margin-top:3px }
+.top5-right { text-align:right }
+.top5-val { font-size:14px; font-weight:700; color:var(--rd) }
+.top5-sub { font-size:10px; color:var(--t3); margin-top:2px }
+
+/* ── GRID ── */
+.grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(270px,1fr)); gap:10px }
+
+.card {
+  background:var(--bg2); border:1px solid var(--b); border-radius:14px;
+  padding:16px; cursor:pointer; transition:all .2s; position:relative;
+}
+.card:hover { border-color:var(--bh); transform:translateY(-1px) }
+.card.reorder { border-left:3px solid var(--rd) }
+.card.markdown { border-left:3px solid var(--am) }
+.card.watch { border-left:3px solid var(--bl) }
+.card.healthy { border-left:3px solid var(--gr) }
+
+.card .chead { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px }
+.card .cname { font-size:13px; font-weight:700; letter-spacing:-.1px; line-height:1.2; flex:1 }
+.card .ctype { font-size:9px; font-weight:500; color:var(--t3); text-transform:uppercase; letter-spacing:.5px; display:block }
+
+.score-badge {
+  width:44px; height:44px; border-radius:11px; display:flex; align-items:center;
+  justify-content:center; font-size:18px; font-weight:800; flex-shrink:0; margin-left:10px;
+}
+.score-badge.hi { background:var(--rd2); color:var(--rd) }
+.score-badge.md { background:var(--am2); color:var(--am) }
+.score-badge.lo { background:var(--gr2); color:var(--gr) }
+
+.card .stats { display:flex; gap:8px; margin-bottom:8px; flex-wrap:wrap }
+.card .stat { font-size:9px; color:var(--t3); text-transform:uppercase; letter-spacing:.5px }
+.card .stat span { display:block; font-size:13px; font-weight:600; color:var(--t); margin-top:1px }
+
+.card .rec {
+  font-size:10px; padding:5px 9px; border-radius:7px; line-height:1.5;
+}
+.rec-reorder { background:var(--rd2); color:var(--rd) }
+.rec-markdown { background:var(--am2); color:var(--am) }
+.rec-watch { background:var(--bl2); color:var(--bl) }
+.rec-healthy { background:var(--gr2); color:var(--gr) }
+
+.empty { text-align:center; padding:60px 20px; color:var(--t3); grid-column:1/-1 }
+.empty .icon { font-size:40px; margin-bottom:10px }
+
+.filter-row { display:flex; gap:6px; margin-bottom:16px; flex-wrap:wrap; align-items:center }
+.filter-chip {
+  padding:5px 13px; border-radius:14px; font-size:10px; font-weight:600;
+  background:var(--bg2); color:var(--t2);
+  border:1px solid var(--b); cursor:pointer; transition:all .15s; white-space:nowrap;
+}
+.filter-chip:hover { color:var(--t); border-color:var(--bh) }
+.filter-chip.on.reorder { background:var(--rd2); border-color:var(--rd); color:var(--rd) }
+.filter-chip.on.markdown { background:var(--am2); border-color:var(--am); color:var(--am) }
+.filter-chip.on.watch { background:var(--bl2); border-color:var(--bl); color:var(--bl) }
+.filter-chip.on.healthy { background:var(--gr2); border-color:var(--gr); color:var(--gr) }
+.filter-chip.on.all { background:rgba(255,255,255,.08); border-color:var(--bh); color:var(--t) }
+
+.filter-chip .cnt { font-size:9px; color:inherit; opacity:.7 }
+
+/* ── TABLE ── */
+.tbl-wrap { overflow-x:auto; max-height:calc(100vh - 240px); overflow-y:auto }
+.tbl { width:100%; border-collapse:collapse; font-size:13px }
+.tbl th {
+  text-align:left; padding:10px 14px; font-size:10px; font-weight:600;
+  text-transform:uppercase; letter-spacing:.8px; color:var(--t3);
+  border-bottom:1px solid var(--b); position:sticky; top:0; background:var(--bg); z-index:1;
+}
+.tbl td { padding:10px 14px; border-bottom:1px solid rgba(255,255,255,.03); color:var(--t2) }
+.tbl tr { cursor:pointer; transition:background .15s }
+.tbl tr:hover td { background:rgba(255,255,255,.02) }
+
+.badge { display:inline-block; padding:3px 9px; border-radius:10px; font-size:10px; font-weight:600 }
+.badge.rd { background:var(--rd2); color:var(--rd) }
+.badge.am { background:var(--am2); color:var(--am) }
+.badge.bl { background:var(--bl2); color:var(--bl) }
+.badge.gr { background:var(--gr2); color:var(--gr) }
+
+/* ── CASH FLOW ── */
+.cf-scene-tabs { display:flex; gap:10px; margin-bottom:18px }
+.cf-scene-tab {
+  flex:1; padding:14px 16px; border-radius:16px; font-size:13px; font-weight:700;
+  background:var(--bg2); color:var(--t2); border:1px solid var(--b);
+  cursor:pointer; transition:all .2s; text-align:center;
+}
+.cf-scene-tab .cf-st-sub { display:block; font-size:10px; font-weight:400; color:var(--t3); margin-top:3px }
+.cf-scene-tab:hover { color:var(--t); border-color:var(--bh); background:rgba(255,255,255,.04) }
+.cf-scene-tab.on { background:rgba(10,132,255,.1); border-color:var(--bl); color:var(--t) }
+.cf-scene-tab.on .cf-st-sub { color:rgba(255,255,255,.5) }
+
+.cf-main-row { display:grid; grid-template-columns:1.5fr 1fr; gap:14px; margin-bottom:14px; align-items:start }
+.cf-card {
+  background:var(--bg2); border:1px solid var(--b); border-radius:18px; padding:22px;
+}
+.cf-card h3 { font-size:15px; font-weight:700; margin-bottom:3px; letter-spacing:-.2px }
+.cf-card .sub { font-size:11px; color:var(--t3); margin-bottom:12px; line-height:1.5 }
+
+.cf-kpi-col { display:flex; flex-direction:column; gap:10px }
+.cf-kpi { background:var(--bg2); border:1px solid var(--b); border-radius:14px; padding:16px 20px }
+.cf-kpi .ckv { font-size:28px; font-weight:800; letter-spacing:-.5px; line-height:1 }
+.cf-kpi .ckl { font-size:11px; color:var(--t3); margin-top:5px }
+
+.cf-md-row { display:flex; align-items:center; gap:12px; padding:9px 0; border-bottom:1px solid rgba(255,255,255,.04) }
+.cf-md-row:last-child { border-bottom:none }
+.cf-md-name { font-size:12px; font-weight:600; color:var(--t2); min-width:0; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+.cf-md-val { font-size:12px; font-weight:700; color:var(--am); white-space:nowrap; width:56px; text-align:right }
+.cf-md-bar-wrap { width:100px; height:5px; background:rgba(255,255,255,.07); border-radius:3px; overflow:hidden; flex-shrink:0 }
+.cf-md-bar { height:100%; background:var(--am); border-radius:3px; transition:width .4s }
+
+@media(max-width:900px){ .cf-main-row { grid-template-columns:1fr } }
+
+/* ── FLYWHEEL ── */
+.flywheel { display:flex; align-items:stretch; gap:0; margin-top:10px; flex-wrap:nowrap; overflow-x:auto; padding-bottom:6px }
+.fw-step {
+  flex:1; min-width:150px; background:rgba(255,255,255,.03); border:1px solid var(--b);
+  border-radius:14px; padding:16px 18px; position:relative;
+}
+.fw-step .fw-tag { font-size:9px; text-transform:uppercase; letter-spacing:.8px; font-weight:700; margin-bottom:8px }
+.fw-step .fw-val { font-size:24px; font-weight:800; letter-spacing:-.5px; line-height:1 }
+.fw-step .fw-lbl { font-size:11px; color:var(--t2); margin-top:5px; line-height:1.4 }
+.fw-step.amber .fw-tag { color:var(--am) } .fw-step.amber .fw-val { color:var(--am) }
+.fw-step.blue .fw-tag { color:var(--bl) } .fw-step.blue .fw-val { color:var(--bl) }
+.fw-step.green .fw-tag { color:var(--gr) } .fw-step.green .fw-val { color:var(--gr) }
+.fw-step.purple .fw-tag { color:var(--pu) } .fw-step.purple .fw-val { color:var(--pu) }
+.fw-arrow { display:flex; align-items:center; color:var(--t3); font-size:20px; padding:0 6px; flex-shrink:0 }
+.flywheel-note {
+  margin-top:14px; padding:14px 18px; background:rgba(48,209,88,.06);
+  border-left:3px solid var(--gr); border-radius:10px; font-size:12px;
+  color:var(--t2); line-height:1.6;
+}
+.flywheel-note strong { color:var(--t) }
+
+/* ── MODAL ── */
+.overlay {
+  position:fixed; inset:0; z-index:200; background:rgba(0,0,0,.85);
+  backdrop-filter:blur(10px); display:none; align-items:center; justify-content:center; padding:24px;
+}
+.overlay.open { display:flex }
+
+.modal {
+  background:#0d0d0d; border:1px solid var(--b); border-radius:20px;
+  max-width:600px; width:100%; max-height:85vh; overflow-y:auto; padding:30px;
+}
+.modal .close {
+  float:right; background:none; border:none; color:var(--t2);
+  font-size:24px; cursor:pointer; line-height:1; padding:0 0 8px 8px;
+}
+.modal .mtype { font-size:11px; color:var(--t3); text-transform:uppercase; letter-spacing:1px }
+.modal .mname { font-size:20px; font-weight:800; letter-spacing:-.3px; margin:2px 0 }
+.modal .msku { font-size:11px; color:var(--t3); margin-bottom:10px }
+.modal .mscore { font-size:52px; font-weight:900; letter-spacing:-2px; margin:8px 0 }
+.modal .mslabel { font-size:11px; color:var(--t3); margin-top:-6px }
+
+.modal .mstats { display:flex; gap:14px; flex-wrap:wrap; margin:18px 0 }
+.modal .mstat { font-size:10px; color:var(--t3); text-transform:uppercase; letter-spacing:.5px }
+.modal .mstat span { display:block; font-size:18px; font-weight:700; color:var(--t); margin-top:3px }
+
+.modal .mrec {
+  padding:16px; border-radius:14px; font-size:13px; line-height:1.6; margin-top:16px;
+}
+.modal .mrec.reorder { background:var(--rd2); border:1px solid rgba(255,69,58,.2); color:var(--rd) }
+.modal .mrec.markdown { background:var(--am2); border:1px solid rgba(255,159,10,.2); color:var(--am) }
+.modal .mrec.watch { background:var(--bl2); border:1px solid rgba(10,132,255,.2); color:var(--bl) }
+.modal .mrec.healthy { background:var(--gr2); border:1px solid rgba(48,209,88,.2); color:var(--gr) }
+
+/* ── BACKTEST ── */
+.bt-kpi-row { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:20px }
+.bt-kpi-card { border-radius:18px; padding:26px; border:1px solid; }
+.bt-kpi-card.loss { background:rgba(255,69,58,.03); border-color:rgba(255,69,58,.25) }
+.bt-kpi-card.gain { background:rgba(48,209,88,.03); border-color:rgba(48,209,88,.25) }
+.bt-kpi-card .lbl { font-size:10px; text-transform:uppercase; letter-spacing:1.2px; color:var(--t3); margin-bottom:10px }
+.bt-kpi-card .num { font-size:56px; font-weight:900; letter-spacing:-2px; line-height:1 }
+.bt-kpi-card.loss .num { color:var(--rd) }
+.bt-kpi-card.gain .num { color:var(--gr) }
+.bt-kpi-card .sub { font-size:12px; color:var(--t3); margin:4px 0 12px }
+.bt-kpi-card .dets { display:flex; flex-direction:column; gap:8px }
+.bt-kpi-card .det { display:flex; align-items:center; gap:8px }
+.bt-kpi-card .det .dot { width:6px; height:6px; border-radius:50%; flex-shrink:0 }
+.bt-kpi-card .det .dl { font-size:12px; color:var(--t2); flex:1 }
+.bt-kpi-card .det .dv { font-size:14px; font-weight:700; white-space:nowrap }
+
+.bt-chart-card {
+  background:var(--bg2); border:1px solid var(--b); border-radius:18px;
+  padding:24px; margin-bottom:20px; position:relative;
+}
+.bt-chart-card h3 { font-size:16px; font-weight:700; letter-spacing:-.2px; margin-bottom:3px }
+.bt-chart-card .cs { font-size:11px; color:var(--t3); margin-bottom:20px }
+.bt-chart-canvas { position:relative; height:380px; cursor:crosshair }
+
+.bt-detail {
+  display:none; margin:16px 0 0; padding:16px 20px;
+  border-radius:14px; border:1px solid; background:rgba(255,255,255,.03);
+}
+.bt-detail.on { display:block }
+.bt-detail .dh { font-size:14px; font-weight:700; margin-bottom:8px }
+.bt-detail .db { font-size:12px; line-height:1.65; color:var(--t2) }
+.bt-detail .db strong { color:var(--t) }
+.bt-detail .dnums { display:flex; gap:14px; margin-top:12px; flex-wrap:wrap }
+.bt-detail .dn { font-size:22px; font-weight:800; letter-spacing:-.5px }
+.bt-detail .dnl { font-size:10px; color:var(--t3); text-transform:uppercase; letter-spacing:.5px; margin-top:2px }
+
+.bt-timeline {
+  display:flex; gap:0; overflow-x:auto; padding-bottom:12px; scroll-behavior:smooth;
+  scrollbar-width:thin; scrollbar-color:rgba(255,255,255,.15) transparent;
+}
+.bt-timeline::-webkit-scrollbar { height:5px }
+.bt-timeline::-webkit-scrollbar-track { background:rgba(255,255,255,.04); border-radius:3px }
+.bt-timeline::-webkit-scrollbar-thumb { background:rgba(255,255,255,.2); border-radius:3px }
+.bt-timeline::-webkit-scrollbar-thumb:hover { background:rgba(255,255,255,.35) }
+.bt-tl-card {
+  flex:1; min-width:140px; padding:16px; border-radius:14px;
+  border:1px solid var(--b); cursor:pointer; transition:all .2s;
+  background:rgba(255,255,255,.02); margin-right:10px; position:relative;
+  text-align:center;
+}
+.bt-tl-card:last-child { margin-right:0 }
+.bt-tl-card:hover { border-color:var(--bh); background:rgba(255,255,255,.04) }
+.bt-tl-card.sel { border-color:var(--bl); background:rgba(10,132,255,.06) }
+.bt-tl-card .tm { font-size:22px; font-weight:900; letter-spacing:-.5px; margin-bottom:2px }
+.bt-tl-card .tlbl { font-size:9px; text-transform:uppercase; letter-spacing:.8px; color:var(--t3); margin-bottom:8px }
+.bt-tl-card .tact { font-size:11px; font-weight:600; line-height:1.4 }
+.bt-tl-card .tcost { font-size:10px; color:var(--t2); margin-top:4px }
+.bt-tl-card.marker-red .tm { color:var(--rd) } .bt-tl-card.marker-red .tact { color:var(--rd) }
+.bt-tl-card.marker-grn .tm { color:var(--gr) } .bt-tl-card.marker-grn .tact { color:var(--gr) }
+.bt-tl-card.marker-amb .tm { color:var(--am) } .bt-tl-card.marker-amb .tact { color:var(--am) }
+.bt-tl-card.marker-blu .tm { color:var(--bl) } .bt-tl-card.marker-blu .tact { color:var(--bl) }
+
+.bt-scroll-hint { font-size:10px; color:var(--t3); text-align:center; margin-top:8px }
+
+/* ── SIMULATION CONTROLS ── */
+.sim-controls { display:flex; align-items:center; gap:10px; flex-shrink:0 }
+.sim-status { font-size:12px; font-weight:600; color:var(--gr); min-width:180px; text-align:right }
+.sim-run-btn {
+  padding:9px 20px; border-radius:18px; font-size:12px; font-weight:700;
+  background:var(--gr); color:#000; border:none; cursor:pointer;
+  transition:opacity .2s; white-space:nowrap; letter-spacing:-.2px;
+}
+.sim-run-btn:hover { opacity:.85 }
+.sim-run-btn:disabled { opacity:.4; cursor:default }
+.sim-reset-btn {
+  padding:9px 16px; border-radius:18px; font-size:12px; font-weight:600;
+  background:var(--bg2); color:var(--t2); border:1px solid var(--b);
+  cursor:pointer; transition:all .2s; white-space:nowrap;
+}
+.sim-reset-btn:hover { color:var(--t); border-color:var(--bh) }
+
+/* ── BACKTEST DETAIL TABLE ── */
+.bt-detail-tbl { width:100%; border-collapse:collapse; font-size:11px; margin-top:4px }
+.bt-detail-tbl th { text-align:left; color:var(--t3); font-size:9px; font-weight:600; padding:0 6px 6px 0; text-transform:uppercase; letter-spacing:.5px; border-bottom:1px solid rgba(255,255,255,.07) }
+.bt-detail-tbl th.tr { text-align:right }
+.bt-detail-tbl td { padding:5px 6px 5px 0; border-bottom:1px solid rgba(255,255,255,.04); color:var(--t2); vertical-align:middle }
+.bt-detail-tbl tr:last-child td { border-bottom:none }
+.bt-detail-tbl .tr { text-align:right }
+.bt-detail-tbl .t3 { color:var(--t3) }
+
+@media (max-width:1024px) {
+  .app { flex-direction:column }
+  .sidebar { width:100%; min-width:100%; height:42%; border-right:none; border-bottom:1px solid var(--b) }
+  .main { height:58% }
+  .problem-row { flex-direction:column }
+  .bt-row { flex-direction:column }
+  .health-block { flex-direction:column }
+}
+@media (max-width:640px) {
+  .grid { grid-template-columns:1fr }
+  .header { padding:10px 14px }
+  .header-meta { display:none }
+  .tabs { padding:8px 14px }
+  .content { padding:14px 16px 32px }
+  .search { width:120px }
+}
+</style>
+<script src="chart.min.js"></script>
+<script src="stocksense_data.js?v=5"></script>
+</head>
+<body>
+<div class="app">
+
+<!-- SIDEBAR — AI Chat -->
+<div class="sidebar">
+  <div class="sidebar-head">
+    <div class="bot-head-row">
+      <svg class="ss-bot" id="ssBot" viewBox="0 0 72 80" aria-hidden="true">
+        <!-- antenna -->
+        <line x1="36" y1="6" x2="36" y2="13" stroke="#6e6e73" stroke-width="2" stroke-linecap="round"/>
+        <circle class="ss-ant" cx="36" cy="5" r="3.4" fill="#0a84ff"/>
+        <!-- head -->
+        <rect x="17" y="12" width="38" height="27" rx="9" fill="#f5f5f7" stroke="#0a84ff" stroke-width="1.6"/>
+        <!-- eyes -->
+        <g class="ss-eyes">
+          <circle class="ss-eye" cx="28" cy="25" r="3.3" fill="#0a84ff"/>
+          <circle class="ss-eye" cx="44" cy="25" r="3.3" fill="#0a84ff"/>
+        </g>
+        <!-- little smile -->
+        <path d="M30 31 Q36 34.5 42 31" fill="none" stroke="#0a84ff" stroke-width="1.6" stroke-linecap="round"/>
+        <!-- arms holding the parcel -->
+        <path d="M18 44 Q12 50 18 56" fill="none" stroke="#f5f5f7" stroke-width="4" stroke-linecap="round"/>
+        <path d="M54 44 Q60 50 54 56" fill="none" stroke="#f5f5f7" stroke-width="4" stroke-linecap="round"/>
+        <!-- parcel -->
+        <g class="ss-parcel">
+          <rect x="20" y="44" width="32" height="28" rx="4" fill="#ff9f0a"/>
+          <rect x="20" y="44" width="32" height="28" rx="4" fill="none" stroke="#000" stroke-opacity=".18" stroke-width="1.4"/>
+          <line x1="36" y1="44" x2="36" y2="72" stroke="#000" stroke-opacity=".22" stroke-width="2.4"/>
+          <line x1="20" y1="55" x2="52" y2="55" stroke="#000" stroke-opacity=".15" stroke-width="2"/>
+          <path d="M30 44 L36 50 L42 44" fill="none" stroke="#000" stroke-opacity=".22" stroke-width="1.6" stroke-linejoin="round"/>
+        </g>
+      </svg>
+      <div class="bot-id">
+        <h2>Stock<span>Sense</span> AI</h2>
+        <div class="sub">Working capital assistant &middot; 645 SKUs live</div>
+      </div>
+      <button class="settings-btn" onclick="openSettings()" title="Settings">&#9881;</button>
+    </div>
+  </div>
+  <div class="chat-body">
+    <div class="chat-msgs" id="chat">
+      <div class="msg agent">
+        Hi, I'm StockSense &mdash; how can I help you today?
+        <br><br>Tap a suggestion below, or ask me anything about your inventory, cash, or reorders.
+        <div class="time">Now</div>
+      </div>
+    </div>
+    <div class="chat-sugs" id="sugs">
+      <button class="sug" onclick="ask('What should I reorder first?')">Urgent reorders</button>
+      <button class="sug" onclick="ask('How much cash is trapped?')">Trapped cash</button>
+      <button class="sug" onclick="ask('Which products should I mark down?')">Markdown picks</button>
+      <button class="sug" onclick="ask('Show me cash flow scenarios')">Cash flow</button>
+      <button class="sug" onclick="ask('What are supplier lead times?')">Lead times</button>
+      <button class="sug" onclick="ask('What is my current P&L?')">P&amp;L snapshot</button>
+    </div>
+    <div class="chat-input-row">
+      <input id="chatInput" placeholder="Ask about inventory, cash, reorders..." onkeydown="if(event.key==='Enter')send()">
+      <button class="send" id="sendBtn" onclick="send()">Send</button>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <!-- Header -->
+  <div class="header">
+    <div class="logo">Pretty Fly &mdash; Stock<span>Sense</span></div>
+    <div class="header-meta">Data as of 1 Jun 2026</div>
+    <button class="method-btn" onclick="openMethodology()" title="How StockSense works &amp; all assumptions">&#9432; Methodology</button>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab on" onclick="switchTab('overview',event)">Overview</button>
+    <button class="tab" onclick="switchTab('stocksense',event)">All SKUs</button>
+    <button class="tab" onclick="switchTab('queue',event)">Action Queue</button>
+    <button class="tab" onclick="switchTab('cashflow',event)">Cash Flow</button>
+    <button class="tab" onclick="switchTab('backtest',event)">Backtest Proof</button>
+    <input class="search" id="searchInput" placeholder="Search SKU or product&hellip;" oninput="renderGrid()" style="display:none">
+  </div>
+
+  <!-- Content -->
+  <div class="content">
+
+    <!-- OVERVIEW -->
+    <div class="panel on" id="panel-overview">
+      <div class="hero">
+        <h1>Pretty Fly has two inventory problems &mdash; happening right now.</h1>
+        <p>StockSense scored all 645 variants across 6 product types. <span style="color:var(--t3)">Data as of 1 Jun 2026.</span></p>
+      </div>
+
+      <div class="how-card">
+        <div class="how-head">
+          <h3>How StockSense works</h3>
+          <span class="how-pill">645 variants &middot; scored 0&ndash;100</span>
+        </div>
+        <p class="how-lead">For every product variant, StockSense reads the last 12 months of real sales and current stock, then scores how urgently it needs attention &mdash; so a buyer can act on the worst 20 SKUs instead of guessing across 645. <span style="color:var(--t3)">The Backtest tab proves it works: it was given only the first year of data and its calls were checked against the year that followed.</span></p>
+        <div class="how-steps">
+          <div class="how-step"><div class="how-n">1</div><div><strong>Measure demand.</strong> It blends each variant&rsquo;s recent (3-month) and long-run (12-month) selling speed, so a product that&rsquo;s heating up or cooling down is caught early.</div></div>
+          <div class="how-step"><div class="how-n">2</div><div><strong>Score 0&ndash;100.</strong> Stock urgency (how fast it&rsquo;s running out, 0&ndash;50) + demand intensity (how much it sells vs every other variant, 0&ndash;30) + a bonus for accelerating demand (0&ndash;20).</div></div>
+          <div class="how-step"><div class="how-n">3</div><div><strong>Sort into four actions.</strong> Reorder (empty or running out), Mark Down (more than a year of stock sitting), Watch, or Healthy.</div></div>
+          <div class="how-step"><div class="how-n">4</div><div><strong>Cost every move.</strong> Each variant gets a specific recommendation with a &pound; figure &mdash; reorder this many units for &pound;X, mark down that stock to free &pound;Y.</div></div>
+        </div>
+      </div>
+
+      <div class="problem-row" id="problems"></div>
+      <div class="health-block">
+        <div class="health-chart">
+          <h3>Inventory health across all 645 variants</h3>
+          <div class="sub">StockSense classifies every SKU into one of four buckets based on stock level and demand velocity</div>
+          <div style="position:relative;height:260px"><canvas id="chartHealth"></canvas></div>
+        </div>
+        <div class="health-legend" id="healthLegend"></div>
+      </div>
+      <div class="top5-card">
+        <h3>Top 5 most urgent reorders</h3>
+        <div class="sub">Stocked out with the highest recent demand. Losing the most revenue right now. Click to drill in.</div>
+        <div id="top5"></div>
+      </div>
+    </div>
+
+    <!-- ALL SKUs -->
+    <div class="panel" id="panel-stocksense">
+      <div class="filter-row" id="filterRow"></div>
+      <div class="grid" id="grid"></div>
+      <div class="empty" id="gridEmpty" style="display:none"><div class="icon">--</div>No SKUs match your filters.</div>
+    </div>
+
+    <!-- ACTION QUEUE -->
+    <div class="panel" id="panel-queue">
+      <div class="filter-row" id="queueFilterRow"></div>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr>
+          <th>Score</th><th>Status</th><th>SKU</th><th>Product</th>
+          <th>Type</th><th>Stock</th><th>Vel/wk</th><th>Cover</th>
+          <th>Margin</th><th>Recommendation</th><th>Cost</th>
+        </tr></thead>
+        <tbody id="queueTbody"></tbody>
+      </table></div>
+    </div>
+
+    <!-- CASH FLOW -->
+    <div class="panel" id="panel-cashflow">
+      <div class="cf-scene-tabs">
+        <button class="cf-scene-tab" onclick="showScenario('cons',this)">Conservative<span class="cf-st-sub">20% off &middot; 50% sell-through &middot; Top 50% reorders</span></button>
+        <button class="cf-scene-tab on" onclick="showScenario('mod',this)">Moderate<span class="cf-st-sub">30% off &middot; 70% sell-through &middot; 80% reorders &mdash; recommended</span></button>
+        <button class="cf-scene-tab" onclick="showScenario('agg',this)">Aggressive<span class="cf-st-sub">40% off &middot; 85% sell-through &middot; All reorders</span></button>
+      </div>
+      <div class="cf-main-row">
+        <div class="cf-card">
+          <h3>All three scenarios side by side</h3>
+          <div class="sub">Cash freed from markdowns, reinvested into reorders, and left over after restocking. Revenue is shown as the annual run-rate unlocked by the funded reorders.</div>
+          <div style="position:relative;height:270px"><canvas id="chartCF"></canvas></div>
+        </div>
+        <div class="cf-kpi-col" id="cfKpis">
+          <div class="cf-kpi"><div class="ckv">—</div><div class="ckl">Select a scenario</div></div>
+        </div>
+      </div>
+      <div class="cf-card">
+        <h3>Top overstock variants to mark down first</h3>
+        <div class="sub">71 variants with &gt;12 months of cover &mdash; sorted by cash trapped. Mark these down to unlock the capital that funds your reorders.</div>
+        <div id="cfMarkdownList"></div>
+      </div>
+
+      <div class="cf-card" style="margin-top:14px">
+        <h3>Is this a one-off, or does it keep paying? The self-funding flywheel</h3>
+        <div class="sub">The freed cash funds the first restock. After that, the restocked products earn enough gross profit to pay for their own replenishment &mdash; the cycle sustains itself without any new outside cash.</div>
+        <div class="flywheel" id="cfFlywheel"></div>
+        <div class="flywheel-note" id="cfFlywheelNote"></div>
+      </div>
+    </div>
+
+    <!-- BACKTEST -->
+    <div class="panel" id="panel-backtest">
+      <div class="hero">
+        <h1>Backtest: what would StockSense have done 12 months ago?</h1>
+        <p><strong>How it works:</strong> StockSense scored every variant using <em>only</em> data up to 31 May 2025 (month 12). No future data. It then issued REORDER / MARKDOWN / HOLD for each variant. The real months 13&ndash;24 (Jun 2025&ndash;May 2026) were replayed against those recommendations &mdash; actual stockouts from the inventory ledger, actual overstock from real sell-through.<br><br>The chart shows the cumulative financial impact of <em>acting</em> on the recommendations vs doing nothing. The baseline (doing nothing) is £0 &mdash; you don't lose money, you just don't capture the upside.</p>
+      </div>
+      <div class="bt-kpi-row" id="btKpiRow"></div>
+      <div class="bt-chart-card">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:16px">
+          <div>
+            <h3>Cumulative impact: With StockSense vs doing nothing</h3>
+            <div class="cs" style="margin-bottom:0">Real data. 12 months. Press play to replay at 1 month per second.</div>
+          </div>
+          <div class="sim-controls">
+            <span class="sim-status" id="simStatus"></span>
+            <button id="btRunBtn" class="sim-run-btn" onclick="runSimulation()">&#9654; Run Simulation</button>
+            <button id="btResetBtn" class="sim-reset-btn" onclick="resetSimulation()" style="display:none">&#8635; Reset</button>
+          </div>
+        </div>
+        <div class="bt-chart-canvas"><canvas id="chartBacktest"></canvas></div>
+        <div class="bt-detail" id="btDetail"></div>
+      </div>
+      <h3 style="margin-bottom:12px;font-size:14px;margin-top:4px">Month-by-month breakdown &mdash; click to inspect</h3>
+      <div class="bt-timeline" id="btTimeline"></div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<!-- MODAL -->
+<div class="overlay" id="overlay" onclick="closeModal(event)">
+  <div class="modal" id="modal" onclick="event.stopPropagation()"></div>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div class="overlay" id="settingsOverlay" onclick="closeSettings(event)">
+  <div class="settings-modal" onclick="event.stopPropagation()">
+    <button class="close" onclick="closeSettings()">&times;</button>
+    <h2>Settings</h2>
+    <div class="msub">StockSense answers from your live inventory data by default &mdash; no setup needed. You can optionally connect a language model to phrase answers more conversationally. Keys are kept in this browser session only and never leave your machine except to call the model.</div>
+    <label class="set-label">Language model API key &mdash; optional</label>
+    <div class="api-key-row">
+      <input id="deepseekKey" type="password" placeholder="Paste API key" autocomplete="off" spellcheck="false" onkeydown="if(event.key==='Enter')saveDeepSeekKey()">
+      <button class="primary" onclick="saveDeepSeekKey()">Connect</button>
+      <button onclick="clearDeepSeekKey()">Clear</button>
+    </div>
+    <div class="api-status" id="apiStatus" style="margin-top:8px">Using built-in answers</div>
+  </div>
+</div>
+
+<!-- METHODOLOGY MODAL -->
+<div class="overlay" id="methodOverlay" onclick="closeMethodology(event)">
+  <div class="method-modal" onclick="event.stopPropagation()">
+    <button class="close" onclick="closeMethodology()">&times;</button>
+    <h2>How StockSense works</h2>
+    <div class="msub">A transparent scoring formula over 24 months of real sales data &mdash; no machine learning, no black box. Every recommendation is reproducible and traces back to specific rows of data.</div>
+
+    <div class="method-glass">
+      <strong>Not a trained model.</strong> StockSense isn&rsquo;t a neural network and nothing is &ldquo;trained.&rsquo;&rdquo; It&rsquo;s a deterministic calculation that runs identically every time &mdash; you could rebuild it in a spreadsheet. That means it can&rsquo;t hallucinate, and a buyer can audit exactly why any SKU was flagged. The Backtest tab <em>validates</em> the formula (it doesn&rsquo;t train it) by hiding the future and checking the calls against what really happened.
+    </div>
+
+    <div class="method-sec">
+      <h4>Step 1 &middot; Measure how fast each variant sells</h4>
+      <ul>
+        <li><strong>Recent rate</strong> = units sold in the last 3 months &divide; 13 weeks</li>
+        <li><strong>Long-run rate</strong> = units sold in the last 12 months &divide; 52 weeks</li>
+        <li><strong>Blended velocity</strong> = <code>recent &times; 0.6 + long-run &times; 0.4</code> &mdash; leans toward what&rsquo;s selling now, but one hot month can&rsquo;t dominate</li>
+        <li>If a variant had no 12-month sales, it falls back to the 3-month rate (or zero)</li>
+      </ul>
+    </div>
+
+    <div class="method-sec">
+      <h4>Step 2 &middot; Work out how long stock will last</h4>
+      <ul>
+        <li><strong>Months of cover</strong> = <code>inventory &divide; weekly velocity &divide; 4.33</code> (4.33 weeks per month)</li>
+        <li>No velocity but stock on hand &rarr; treated as infinite cover (dead stock)</li>
+        <li>Negative inventory (oversold) &rarr; shown as <strong>Out of Stock</strong></li>
+      </ul>
+    </div>
+
+    <div class="method-sec">
+      <h4>Step 3 &middot; Score it 0&ndash;100 (three parts added together)</h4>
+      <ul>
+        <li><strong>Stock urgency (0&ndash;50):</strong> 50 if empty, 0 if more than 12 months of cover, sliding linearly in between &mdash; <code>50 &times; (1 &minus; cover/12)</code></li>
+        <li><strong>Demand intensity (0&ndash;30):</strong> this variant&rsquo;s percentile rank by 12-month units vs all 645 others, &times; 30. Top seller &asymp; 30, median &asymp; 15. Percentile (not raw units) so a few blockbusters don&rsquo;t crush everything else.</li>
+        <li><strong>Trend bonus (0&ndash;20):</strong> extra points when the recent rate beats the long-run rate &mdash; <code>(recent &minus; long-run) / long-run &times; 50</code>, capped at 20. Catches accelerating demand early.</li>
+      </ul>
+    </div>
+
+    <div class="method-sec">
+      <h4>Step 4 &middot; Sort into an action</h4>
+      <ul>
+        <li>Inventory &le; 0 &rarr; <strong>Reorder</strong></li>
+        <li>More than 12 months of cover &amp; still selling &rarr; <strong>Mark Down</strong></li>
+        <li>Less than 2 months of cover &amp; still selling &rarr; <strong>Reorder</strong></li>
+        <li>Score &ge; 50 (but not the above) &rarr; <strong>Watch</strong></li>
+        <li>Stock on hand but zero velocity &rarr; <strong>Mark Down</strong> (dead stock)</li>
+        <li>Everything else &rarr; <strong>Healthy</strong></li>
+      </ul>
+    </div>
+
+    <div class="method-sec">
+      <h4>Step 5 &middot; Cost every recommendation</h4>
+      <ul>
+        <li><strong>Reorder quantity</strong> = ~12 weeks of velocity (or 80% of last-3-month units if no velocity)</li>
+        <li><strong>Reorder cost</strong> = quantity &times; landed cost per unit</li>
+        <li><strong>Markdown value</strong> = current stock &times; landed cost (the cash currently trapped)</li>
+      </ul>
+    </div>
+
+    <div class="method-sec">
+      <h4>The Backtest &mdash; validation, not training</h4>
+      <p>Same formula, but it&rsquo;s only shown data up to <strong>31 May 2025</strong> (end of month 12). It issues Reorder / Mark Down / Hold calls, then the real months 13&ndash;24 are replayed against them: actual stockouts from the inventory ledger, actual leftover stock from real sell-through. This proves the calls were right without the formula ever seeing the future.</p>
+    </div>
+
+    <div class="method-sec">
+      <h4>Key assumptions &amp; caveats</h4>
+      <div class="method-assume"><ul>
+        <li>&ldquo;Today&rdquo; in the dataset is <strong>1 June 2026</strong>; the data spans 24 months (Jun 2024 &ndash; May 2026), all synthetic.</li>
+        <li><strong>Landed cost</strong> per variant comes from its most recent purchase order; variants with no PO use the average landed cost as a fallback.</li>
+        <li><strong>Cash-flow scenarios</strong> &mdash; Conservative: 20% off, 50% sell-through, restock top 50% of flagged SKUs. Moderate: 30% / 70% / 80%. Aggressive: 40% / 85% / 100%.</li>
+        <li><strong>Freed cash</strong> = markdown stock at retail &times; (1 &minus; discount) &times; sell-through. It is <em>not</em> the cost-basis trapped-cash figure.</li>
+        <li><strong>Revenue multiplier (8.34&times;)</strong> = annual stockout revenue run-rate &divide; total reorder cost. It assumes restocked demand returns to its prior level.</li>
+        <li><strong>Backtest revenue</strong> is discounted by an <strong>80% capture rate</strong> &mdash; we don&rsquo;t claim to recover 100% of lost sales.</li>
+        <li><strong>Lead times</strong> (~60&ndash;90 days) mean recovery isn&rsquo;t instant: the backtest models deliveries starting ~2 months after a reorder, then ramping.</li>
+        <li><strong>Monthly timing</strong> in the backtest is shaped by real seasonal factors (markdowns front-loaded, recovery delayed) &mdash; the 12-month totals are exact; the month-by-month split is modelled.</li>
+        <li><strong>Cannibalization &amp; seasonality</strong> aren&rsquo;t fully removed: some &ldquo;lost&rdquo; sales may have shifted to in-stock substitutes, so recovery figures are a target, not a guarantee.</li>
+      </ul></div>
+    </div>
+  </div>
+</div>
+
+<script>
+var D = null, currentTab='overview', queueFilter='all', gridFilter='all', charts={}, btRendered=false;
+var DEEPSEEK_ENDPOINT='https://api.deepseek.com/chat/completions';
+var DEEPSEEK_MODEL='deepseek-v4-flash';
+var chatHistory=[];
+
+function $(id){ return document.getElementById(id) }
+
+document.addEventListener('DOMContentLoaded',function(){
+  D = window.STOCKSENSE_DATA;
+  if(!D){ $('content').innerHTML='<div class="empty"><div class="icon">!</div>Data not loaded. Ensure stocksense_data.js is present.</div>'; return; }
+  D.variants.sort(function(a,b){ return b.stocksense_score - a.stocksense_score });
+  initDeepSeekKey();
+  renderOverview(); renderQueue(); renderFilters();
+});
+
+/* ── OVERVIEW ── */
+function renderOverview(){
+  var s=D.summary, f=function(n){return n>=1e6?'£'+(n/1e6).toFixed(2)+'M':'£'+(n/1e3).toFixed(0)+'K'};
+  $('problems').innerHTML=
+    '<div class="problem over"><div class="tag">Problem 1 &mdash; Overstock</div><h3>Cash frozen in slow-moving products</h3><div class="big">'+f(s.total_trapped_cash)+'</div><div class="desc">Locked up across <strong>'+s.markdown_count+'</strong> variants with more than 12 months of stock sitting in the warehouse.</div><div class="note">That cash earns nothing. Every week it stays is a week it could have funded a reorder that would actually sell.</div></div>'+
+    '<div class="problem out"><div class="tag">Problem 2 &mdash; Stockouts</div><h3>Revenue leaking through empty shelves</h3><div class="big">'+f(s.lost_monthly_revenue)+'/mo</div><div class="desc">Monthly revenue lost from <strong>'+s.reorder_count+'</strong> variants that are out of stock but customers still want.</div><div class="note">These products sold recently &mdash; real demand exists &mdash; but shelves are empty. Stockouts are silent: no error message, just a customer who bought elsewhere.</div></div>';
+
+  $('healthLegend').innerHTML=
+    '<div class="hl rd"><div class="num">'+s.reorder_count+'</div><div class="lbl">Reorder Now</div><div class="dsc">Stocked out or running out within 2 months. Losing revenue today.</div></div>'+
+    '<div class="hl bl"><div class="num">'+s.watch_count+'</div><div class="lbl">Watch</div><div class="dsc">High demand score. Monitor closely &mdash; may need restocking soon.</div></div>'+
+    '<div class="hl am"><div class="num">'+s.markdown_count+'</div><div class="lbl">Mark Down</div><div class="dsc">Too much stock. Run a discount to unlock trapped cash.</div></div>'+
+    '<div class="hl gr"><div class="num">'+s.healthy_count+'</div><div class="lbl">Healthy</div><div class="dsc">Well-balanced. Good cover, steady sales. No action needed.</div></div>';
+
+  var ctx=$('chartHealth');
+  if(ctx&&!charts.health){
+    charts.health=new Chart(ctx,{type:'doughnut',data:{labels:['Reorder ('+s.reorder_count+')','Watch ('+s.watch_count+')','Mark Down ('+s.markdown_count+')','Healthy ('+s.healthy_count+')'],datasets:[{data:[s.reorder_count,s.watch_count,s.markdown_count,s.healthy_count],backgroundColor:['#ff453a','#0a84ff','#ff9f0a','#30d158'],borderColor:'#000',borderWidth:3}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'bottom',labels:{color:'#98989d',font:{size:11},padding:18,usePointStyle:true,pointStyleWidth:10}}},animation:{duration:400}}});
+  }
+
+  var top5=D.variants.filter(function(v){return v.status==='reorder'&&v.inventory<=0}).sort(function(a,b){return b.revenue_3mo-a.revenue_3mo}).slice(0,5);
+  var h='';
+  for(var i=0;i<top5.length;i++){
+    var v=top5[i];
+    h+='<div class="top5-row" onclick="openModal(\''+v.variant_id+'\')"><div><div class="top5-name">'+esc(v.product_name)+'</div><div class="top5-meta">'+esc(v.sku)+' &middot; '+esc(v.product_type)+' &middot; '+v.velocity_weekly.toFixed(1)+'/wk</div></div><div class="top5-right"><div class="top5-val">&minus;&pound;'+v.revenue_3mo.toFixed(0)+'</div><div class="top5-sub">lost last 3 months</div></div></div>';
+  }
+  $('top5').innerHTML=h||'<div style="color:var(--t3);font-size:12px;padding:12px 0">No stocked-out variants with recent demand.</div>';
+}
+
+/* ── FILTERS ── */
+function renderFilters(){
+  var s=D.summary,types=[];
+  for(var i=0;i<D.variants.length;i++){ var t=D.variants[i].product_type; if(types.indexOf(t)===-1) types.push(t) }
+  var h='<button class="filter-chip on all" onclick="setGridFilter(\'all\',event)">All<span class="cnt"> '+s.total_variants+'</span></button>';
+
+  var statuses=[{k:'reorder',n:s.reorder_count},{k:'markdown',n:s.markdown_count},{k:'watch',n:s.watch_count},{k:'healthy',n:s.healthy_count}];
+  for(var i=0;i<statuses.length;i++){
+    var st=statuses[i];
+    h+='<button class="filter-chip" onclick="setGridFilter(\''+st.k+'\',event)">'+st.k.charAt(0).toUpperCase()+st.k.slice(1)+'<span class="cnt"> '+st.n+'</span></button>';
+  }
+  h+='<span style="margin-left:10px;font-size:10px;color:var(--t3)">Type:</span>';
+  for(var i=0;i<types.length;i++){
+    h+='<button class="filter-chip" onclick="setGridFilter(\'type:'+types[i]+'\',event)">'+types[i]+'</button>';
+  }
+  $('filterRow').innerHTML=h;
+
+  var qh='<button class="filter-chip on all" onclick="setQueueFilter(\'all\',event)">All<span class="cnt"> '+s.total_variants+'</span></button>';
+  for(var i=0;i<statuses.length;i++){
+    var st=statuses[i];
+    qh+='<button class="filter-chip" onclick="setQueueFilter(\''+st.k+'\',event)">'+st.k.charAt(0).toUpperCase()+st.k.slice(1)+'<span class="cnt"> '+st.n+'</span></button>';
+  }
+  $('queueFilterRow').innerHTML=qh;
+}
+
+/* ── GRID ── */
+function renderGrid(){
+  var search=($('searchInput').value||'').toLowerCase(),h='',shown=0;
+  for(var i=0;i<D.variants.length;i++){
+    var v=D.variants[i];
+    if(gridFilter!=='all'){
+      if(gridFilter.startsWith('type:')){ if(v.product_type!==gridFilter.slice(5)) continue }
+      else if(v.status!==gridFilter) continue;
+    }
+    if(search&&v.product_name.toLowerCase().indexOf(search)===-1&&v.sku.toLowerCase().indexOf(search)===-1) continue;
+    var sc=v.stocksense_score>=60?'hi':v.stocksense_score>=40?'md':'lo';
+    h+='<div class="card '+v.status+'" onclick="openModal(\''+v.variant_id+'\')">';
+    h+='<div class="chead"><div class="cname"><span class="ctype">'+esc(v.product_type)+'</span>'+esc(v.product_name)+'</div><div class="score-badge '+sc+'">'+v.stocksense_score+'</div></div>';
+    h+='<div class="stats">';
+    h+='<div class="stat">Stock<span>'+(v.inventory>0?v.inventory:'<span style=color:var(--rd)>0</span>')+'</span></div>';
+    h+='<div class="stat">Vel<span>'+v.velocity_weekly.toFixed(1)+'/wk</span></div>';
+    h+='<div class="stat">Cover<span>'+(v.inventory<=0?'OOS':v.months_cover>=999?'&infin;':v.months_cover===0?'&lt;1mo':v.months_cover.toFixed(0)+'mo')+'</span></div>';
+    h+='<div class="stat">Margin<span>'+v.margin_pct.toFixed(0)+'%</span></div>';
+    h+='</div><div class="rec rec-'+v.status+'">'+esc(v.recommendation)+'</div></div>';
+    shown++;
+  }
+  $('grid').innerHTML=h;
+  $('gridEmpty').style.display=shown?'none':'';
+}
+
+function setGridFilter(f,e){
+  gridFilter=f;
+  var chips=$('filterRow').querySelectorAll('.filter-chip');
+  for(var i=0;i<chips.length;i++){
+    var c=chips[i];
+    c.classList.remove('on','reorder','markdown','watch','healthy','all');
+    var cat=c.textContent.split(' ')[0].toLowerCase().replace(/[^a-z]/g,'');
+    if(f==='all'&&cat==='all') c.classList.add('on','all');
+    else if(f.startsWith('type:')&&c.textContent.trim()===f.slice(5)) c.classList.add('on');
+    else if(cat===f) c.classList.add('on',f);
+  }
+  renderGrid();
+}
+
+/* ── QUEUE ── */
+function renderQueue(){
+  var data=D.variants.slice();
+  if(queueFilter!=='all') data=data.filter(function(v){return v.status===queueFilter});
+  var h='',limit=200;
+  for(var i=0;i<Math.min(data.length,limit);i++){
+    var v=data[i],col=v.stocksense_score>=60?'rd':v.stocksense_score>=40?'am':'gr';
+    h+='<tr onclick="openModal(\''+v.variant_id+'\')">';
+    h+='<td style="font-weight:700;color:var(--'+col+')">'+v.stocksense_score+'</td>';
+    h+='<td><span class="badge '+(v.status==='reorder'?'rd':v.status==='markdown'?'am':v.status==='watch'?'bl':'gr')+'">'+v.status+'</span></td>';
+    h+='<td style="font-family:monospace;font-size:11px">'+esc(v.sku)+'</td>';
+    h+='<td style="font-weight:500;color:var(--t)">'+esc(v.product_name)+'</td><td>'+esc(v.product_type)+'</td>';
+    h+='<td style="color:'+(v.inventory>0?'var(--t)':'var(--rd)')+'">'+v.inventory+'</td>';
+    h+='<td>'+v.velocity_weekly.toFixed(1)+'</td><td>'+(v.inventory<=0?'OOS':v.months_cover>=999?'&infin;':v.months_cover===0?'&lt;1mo':v.months_cover.toFixed(0)+'mo')+'</td>';
+    h+='<td>'+v.margin_pct.toFixed(0)+'%</td><td style="font-size:11px">'+esc(v.recommendation)+'</td>';
+    h+='<td style="font-weight:600">&pound;'+v.recommendation_cost.toFixed(0)+'</td></tr>';
+  }
+  if(data.length>limit) h+='<tr><td colspan="11" style="text-align:center;color:var(--t3);padding:12px">Showing '+limit+' of '+data.length+'. Use filters or search to narrow.</td></tr>';
+  $('queueTbody').innerHTML=h;
+}
+
+function setQueueFilter(f,e){
+  queueFilter=f;
+  var chips=$('queueFilterRow').querySelectorAll('.filter-chip');
+  for(var i=0;i<chips.length;i++){ var c=chips[i]; c.classList.remove('on','reorder','markdown','watch','healthy','all'); var cat=c.textContent.split(' ')[0].toLowerCase().replace(/[^a-z]/g,''); if(f==='all'&&cat==='all') c.classList.add('on','all'); else if(cat===f) c.classList.add('on',f) }
+  renderQueue();
+}
+
+/* ── CASH FLOW ── */
+var _cfScenarios={
+  cons:{disc:0.20,st:0.50,rs:0.50,color:'#ff9f0a',label:'Conservative'},
+  mod: {disc:0.30,st:0.70,rs:0.80,color:'#30d158',label:'Moderate'},
+  agg: {disc:0.40,st:0.85,rs:1.00,color:'#0a84ff',label:'Aggressive'}
+};
+
+function _cfCalc(key){
+  var s=D.summary, cfg=_cfScenarios[key];
+  var retail=s.total_markdown_retail;
+  var freed=retail*(1-cfg.disc)*cfg.st;
+  var invest=s.total_reorder_cost*cfg.rs;
+  var fundedInvest=Math.min(freed,invest);
+  var fundedShare=fundedInvest/Math.max(1,s.total_reorder_cost);
+  var annualRunRate=(s.lost_monthly_revenue*12)*fundedShare;
+  var net=freed-invest;
+  return {freed:freed,invest:invest,annualRunRate:annualRunRate,net:net,fundedShare:fundedShare};
+}
+
+function renderCashFlow(){
+  var s=D.summary;
+  var keys=['cons','mod','agg'];
+  var data=keys.map(function(k){return _cfCalc(k)});
+
+  // Grouped bar chart: 3 scenarios × cash metrics plus annual run-rate.
+  var ctx=$('chartCF');
+  if(ctx&&!charts.cf){
+    var labels=keys.map(function(k){return _cfScenarios[k].label});
+    charts.cf=new Chart(ctx,{
+      type:'bar',
+      data:{
+        labels:labels,
+        datasets:[
+          {
+            label:'Cash freed from markdowns',
+            data:data.map(function(d){return Math.round(d.freed)}),
+            backgroundColor:'rgba(255,159,10,.55)',
+            borderColor:'#ff9f0a',
+            borderWidth:1.5,
+            borderRadius:5,
+            borderSkipped:false
+          },{
+            label:'Reorder investment',
+            data:data.map(function(d){return Math.round(d.invest)}),
+            backgroundColor:'rgba(10,132,255,.45)',
+            borderColor:'#0a84ff',
+            borderWidth:1.5,
+            borderRadius:5,
+            borderSkipped:false
+          },{
+            label:'Net cash position',
+            data:data.map(function(d){return Math.round(d.net)}),
+            backgroundColor:data.map(function(d){return d.net>=0?'rgba(48,209,88,.55)':'rgba(255,69,58,.45)'}),
+            borderColor:data.map(function(d){return d.net>=0?'#30d158':'#ff453a'}),
+            borderWidth:1.5,
+            borderRadius:5,
+            borderSkipped:false
+          },{
+            label:'Annual revenue run-rate unlocked',
+            data:data.map(function(d){return Math.round(d.annualRunRate)}),
+            backgroundColor:'rgba(191,90,242,.35)',
+            borderColor:'#bf5af2',
+            borderWidth:1.5,
+            borderRadius:5,
+            borderSkipped:false
+          }
+        ]
+      },
+      options:{
+        responsive:true,
+        maintainAspectRatio:false,
+        animation:{duration:400,easing:'easeOutCubic'},
+        plugins:{
+          legend:{position:'bottom',labels:{color:'#98989d',font:{size:10},usePointStyle:true,padding:14}},
+          tooltip:{
+            backgroundColor:'rgba(0,0,0,.92)',
+            titleColor:'#f5f5f7',
+            bodyColor:'#98989d',
+            borderColor:'rgba(255,255,255,.1)',
+            borderWidth:1,
+            padding:12,
+            callbacks:{
+              label:function(c){
+                var v=c.raw;
+                var abs=Math.abs(v);
+                var fmt=abs>=1e6?'£'+(v/1e6).toFixed(2)+'M':'£'+(abs/1e3).toFixed(0)+'K';
+                return ' '+c.dataset.label+': '+fmt;
+              }
+            }
+          }
+        },
+        scales:{
+          x:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#636366',font:{size:10}}},
+          y:{
+            grid:{color:'rgba(255,255,255,.04)'},
+            ticks:{color:'#636366',font:{size:9},callback:function(v){return'£'+(v/1e3).toFixed(0)+'K'}},
+            title:{display:true,text:'Amount (£)',color:'#636366',font:{size:9}}
+          }
+        }
+      }
+    });
+  }
+
+  // Top markdown list
+  var md=D.variants.filter(function(v){return v.status==='markdown'&&v.inventory>0})
+    .sort(function(a,b){return(b.inventory*b.landed_cost)-(a.inventory*a.landed_cost)})
+    .slice(0,12);
+  var maxTrap=md.length?md[0].inventory*md[0].landed_cost:1;
+  var mdh='';
+  for(var i=0;i<md.length;i++){
+    var v=md[i], trapped=v.inventory*v.landed_cost;
+    var pct=Math.round(trapped/maxTrap*100);
+    var freed30=Math.round(v.inventory*v.price*0.70*0.70);
+    mdh+='<div class="cf-md-row">';
+    mdh+='<span class="cf-md-name" title="'+esc(v.sku)+'">'+esc(v.product_name)+'</span>';
+    mdh+='<div class="cf-md-bar-wrap"><div class="cf-md-bar" style="width:'+pct+'%"></div></div>';
+    mdh+='<span style="font-size:10px;color:var(--t3);width:60px;text-align:right">'+v.months_cover.toFixed(0)+'mo cover</span>';
+    mdh+='<span class="cf-md-val">&pound;'+Math.round(freed30/1000)+'K freed</span>';
+    mdh+='</div>';
+  }
+  $('cfMarkdownList').innerHTML=mdh;
+
+  renderFlywheel();
+
+  // Default to moderate
+  showScenario('mod', document.querySelectorAll('.cf-scene-tab')[1]);
+}
+
+function renderFlywheel(){
+  var s=D.summary;
+  // Compute margin + weekly economics from the actual reorder variants
+  var ro=D.variants.filter(function(v){return v.status==='reorder'&&v.velocity_weekly>0});
+  var wkRev=0, wkCogs=0;
+  for(var i=0;i<ro.length;i++){
+    wkRev  += ro[i].velocity_weekly*ro[i].price;
+    wkCogs += ro[i].velocity_weekly*ro[i].landed_cost;
+  }
+  var wkGross=wkRev-wkCogs;
+  var margin=wkRev>0?(wkGross/wkRev*100):0;
+  var moGross=wkGross*4.33, moCogs=wkCogs*4.33;
+  var firstRestock=s.total_reorder_cost;
+  var freedModerate=Math.round((s.total_markdown_retail||521204)*0.70*0.70);
+
+  var fK=function(n){return '£'+Math.round(n/1000)+'K'};
+
+  var html='';
+  html+='<div class="fw-step amber"><div class="fw-tag">Step 1 &middot; One-time</div><div class="fw-val">'+fK(freedModerate)+'</div><div class="fw-lbl">freed from marking down dead stock &mdash; pays for the entire first restock of '+fK(firstRestock)+'</div></div>';
+  html+='<div class="fw-arrow">&rarr;</div>';
+  html+='<div class="fw-step blue"><div class="fw-tag">Step 2 &middot; Monthly</div><div class="fw-val">'+fK(wkRev*4.33)+'</div><div class="fw-lbl">in monthly sales once those products are back on the shelf, at their proven selling rate</div></div>';
+  html+='<div class="fw-arrow">&rarr;</div>';
+  html+='<div class="fw-step green"><div class="fw-tag">Step 3 &middot; Monthly</div><div class="fw-val">'+fK(moGross)+'</div><div class="fw-lbl">gross profit per month ('+margin.toFixed(0)+'% margin) after paying '+fK(moCogs)+' to replace what sold</div></div>';
+  html+='<div class="fw-arrow">&#8635;</div>';
+  html+='<div class="fw-step purple"><div class="fw-tag">Step 4 &middot; Self-funding</div><div class="fw-val">'+fK(moCogs)+'</div><div class="fw-lbl">monthly replenishment is fully covered by the products\' own sales &mdash; no new outside cash needed</div></div>';
+  $('cfFlywheel').innerHTML=html;
+
+  $('cfFlywheelNote').innerHTML=
+    '<strong>Why it sustains itself:</strong> the restocked products sell at a <strong>'+margin.toFixed(0)+'% gross margin</strong>. '+
+    'Each month they generate about <strong>'+fK(moGross)+' in gross profit</strong> on roughly <strong>'+fK(wkRev*4.33)+' of sales</strong>. '+
+    'Replacing the stock that sold costs about <strong>'+fK(moCogs)+'/month</strong> &mdash; comfortably paid for out of that month\'s own revenue. '+
+    'The freed markdown cash is only needed to prime the pump once; from there the inventory pays for its own replenishment and throws off profit on top.';
+}
+
+function showScenario(key, btn){
+  // Update tab highlight
+  document.querySelectorAll('.cf-scene-tab').forEach(function(t){t.classList.remove('on')});
+  if(btn) btn.classList.add('on');
+
+  var d=_cfCalc(key);
+  var ff=function(v){return Math.abs(v)>=1e6?'£'+(v/1e6).toFixed(2)+'M':'£'+(Math.abs(v)/1e3).toFixed(0)+'K'};
+  var cfg=_cfScenarios[key];
+
+  // KPI cards
+  var netCol=d.net>=0?'var(--gr)':'var(--rd)';
+  // Note for aggressive: explain why net is lower despite more revenue
+  var aggNote='';
+  if(key==='agg'){
+    aggNote='<div style="margin-top:10px;padding:10px 14px;background:rgba(10,132,255,.07);border-radius:10px;font-size:11px;color:var(--t2);line-height:1.5"><strong style="color:var(--bl)">Why is the net cash lower here?</strong> The aggressive scenario invests more back into restocking — all '+D.summary.reorder_count+' flagged products get reordered. That means more cash goes out in the short term, but the annual revenue run-rate is the highest at '+ff(d.annualRunRate)+'. Moderate is the better balance if you want to keep more cash in hand now.</div>';
+  }
+  $('cfKpis').innerHTML=
+    '<div class="cf-kpi"><div class="ckv" style="color:var(--am)">+'+ff(d.freed)+'</div><div class="ckl">Cash freed from markdowns<br><span style="color:var(--t3)">'+(Math.round(cfg.disc*100))+'% off &middot; '+(Math.round(cfg.st*100))+'% sell-through</span></div></div>'+
+    '<div class="cf-kpi"><div class="ckv" style="color:var(--bl)">&minus;'+ff(d.invest)+'</div><div class="ckl">Reinvested into restocking<br><span style="color:var(--t3)">'+(Math.round(cfg.rs*100))+'% of '+(D.summary.reorder_count)+' products that need restocking</span></div></div>'+
+    '<div class="cf-kpi"><div class="ckv" style="color:var(--pu)">+'+ff(d.annualRunRate)+'</div><div class="ckl">Annual revenue run-rate unlocked<br><span style="color:var(--t3)">'+Math.round(d.fundedShare*100)+'% of '+ff(D.summary.lost_monthly_revenue*12)+' full-stockout run-rate</span></div></div>'+
+    '<div class="cf-kpi" style="border-color:'+(d.net>=0?'rgba(48,209,88,.25)':'rgba(255,69,58,.25)')+';background:'+(d.net>=0?'rgba(48,209,88,.04)':'rgba(255,69,58,.04)')+'"><div class="ckv" style="color:'+netCol+'">'+(d.net>=0?'+':'')+ff(d.net)+'</div><div class="ckl">Cash left over after restocking<br><span style="color:var(--t3)">freed minus reinvested</span></div></div>'+
+    aggNote;
+}
+
+/* ── BACKTEST ── */
+function renderBacktest(){
+  if(btRendered) return;
+  btRendered=true;
+
+  var BT=D.backtest, s=D.summary;
+  var f=function(n){return n>=1e6?'£'+(n/1e6).toFixed(2)+'M':'£'+(n/1e3).toFixed(0)+'K'};
+  var f2=function(n){return n>=1e6?'£'+(n/1e6).toFixed(2)+'M':Math.abs(n)>=1000?'£'+(n/1e3).toFixed(0)+'K':'£'+Math.round(n)};
+
+  var totalImpact=BT.total_impact_gbp, cashFreed=BT.cash_freed_gbp, revRec=BT.revenue_recovered_gbp;
+  var precision=BT.reorder_precision_pct, avoided=BT.stockouts_avoided;
+  var flaggedRO=BT.reorder_flagged, flaggedMD=BT.markdown_flagged;
+  var fullRunRate=s.lost_monthly_revenue*12;
+
+  // KPI cards — real numbers from the backtest
+  $('btKpiRow').innerHTML=
+    '<div class="bt-kpi-card loss"><div class="lbl">Current forward opportunity &mdash; stockout revenue run-rate</div><div class="num">'+f(fullRunRate)+'</div><div class="sub">today&rsquo;s stocked-out demand annualised at '+f(s.lost_monthly_revenue)+'/month. This is context, not the backtest result.</div><div class="dets">'+
+      '<div class="det"><div class="dot" style="background:var(--rd)"></div><div class="dl">Variants currently needing restock</div><div class="dv" style="color:var(--rd)">'+s.reorder_count+'</div></div>'+
+      '<div class="det"><div class="dot" style="background:var(--bl)"></div><div class="dl">Reorder investment required</div><div class="dv" style="color:var(--bl)">'+f(s.total_reorder_cost)+'</div></div>'+
+      '<div class="det"><div class="dot" style="background:var(--pu)"></div><div class="dl">Revenue per £1 invested into reorders</div><div class="dv" style="color:var(--pu)">'+s.revenue_multiplier+'&times;</div></div>'+
+    '</div></div>'+
+    '<div class="bt-kpi-card gain"><div class="lbl">With StockSense &mdash; measured 12-month gross impact</div><div class="num">+'+f(totalImpact)+'</div><div class="sub">historical proof point: '+f(cashFreed)+' markdown proceeds + '+f(revRec)+' recovered revenue. Forward cash-flow scenarios use today&rsquo;s '+f(fullRunRate)+'/yr stockout run-rate.</div><div class="dets">'+
+      '<div class="det"><div class="dot" style="background:var(--am)"></div><div class="dl">Working capital released (markdown proceeds)</div><div class="dv" style="color:var(--am)">+'+f(cashFreed)+'</div></div>'+
+      '<div class="det"><div class="dot" style="background:var(--bl)"></div><div class="dl">Revenue recovered from restocking (measured)</div><div class="dv" style="color:var(--bl)">+'+f(revRec)+'</div></div>'+
+      '<div class="det"><div class="dot" style="background:var(--pu)"></div><div class="dl">Reorder precision (flagged &rarr; confirmed out of stock)</div><div class="dv" style="color:var(--pu)">'+precision+'%</div></div>'+
+    '</div></div>';
+
+  // Build month labels
+  var mnNames=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var labels=BT.series.map(function(s){
+    var p=s.month.split('-'); return mnNames[parseInt(p[1])-1]+' '+p[0];
+  });
+  var allWith       = BT.series.map(function(s){return s.cum_total});
+  var allFreed      = BT.series.map(function(s){return s.cum_freed});
+  var allRecovered  = BT.series.map(function(s){return s.cum_recovered});
+  var allBaseline   = new Array(BT.series.length).fill(0);
+  // Event markers: null except at the event month so only that point renders
+  var mdEvents  = BT.series.map(function(s,i){ return (i<5&&(s.freed_this_month||0)>10000)?s.cum_freed:null; });
+  var rkEvents  = BT.series.map(function(s,i){ return (s.variants_delivered||0)>0?s.cum_total:null; });
+  var yMax=Math.ceil(Math.max.apply(null,allWith)*1.08/50000)*50000;
+
+  // Progressive-reveal canvas plugin — the only reliable "line drawing" approach
+  var revealPlugin={
+    id:'revealPlugin',
+    beforeDatasetsDraw:function(chart){
+      var prog=chart._revealProg;
+      if(prog===undefined||prog>=1) return;
+      var ca=chart.chartArea;
+      var rx=ca.left+(ca.right-ca.left)*prog;
+      chart.ctx.save();
+      chart.ctx.beginPath();
+      chart.ctx.rect(ca.left-1,ca.top-1,rx-ca.left+2,ca.bottom-ca.top+2);
+      chart.ctx.clip();
+    },
+    afterDatasetsDraw:function(chart){
+      if((chart._revealProg||0)<1) chart.ctx.restore();
+    }
+  };
+
+  // Create chart with all data pre-loaded (reveal controlled by _revealProg)
+  var ctx=$('chartBacktest');
+  if(ctx&&!charts.backtest){
+    charts.backtest=new Chart(ctx,{
+      type:'line',
+      plugins:[revealPlugin],
+      data:{
+        labels:labels,
+        datasets:[
+          // Line 1: Combined total — the headline number (green, thick)
+          {
+            label:'Total cumulative impact',
+            data:allWith,
+            borderColor:'#30d158',
+            backgroundColor:'transparent',
+            borderWidth:3,
+            fill:false,
+            tension:0.35,
+            pointRadius:3,
+            pointHoverRadius:8,
+            pointBackgroundColor:'#30d158',
+            pointBorderColor:'#000',
+            pointBorderWidth:1,
+            order:1
+          },
+          // Line 2: Markdown proceeds — the orange area beneath
+          {
+            label:'Working capital freed (markdowns)',
+            data:allFreed,
+            borderColor:'#ff9f0a',
+            backgroundColor:'rgba(255,159,10,.13)',
+            borderWidth:1.5,
+            fill:true,
+            tension:0.35,
+            pointRadius:0,
+            pointHoverRadius:5,
+            order:2
+          },
+          // Line 3: Revenue recovery — thin blue area
+          {
+            label:'Revenue recovered (restocking)',
+            data:allRecovered,
+            borderColor:'#0a84ff',
+            backgroundColor:'rgba(10,132,255,.1)',
+            borderWidth:1.5,
+            fill:true,
+            tension:0.35,
+            pointRadius:0,
+            pointHoverRadius:5,
+            order:3
+          },
+          // Dots: orange triangles where markdown activity peaks (months 1–5)
+          {
+            label:'Markdown sale peaks',
+            data:mdEvents,
+            borderColor:'#000',
+            backgroundColor:'#ff9f0a',
+            borderWidth:1.5,
+            pointRadius:9,
+            pointHoverRadius:13,
+            pointStyle:'triangle',
+            showLine:false,
+            spanGaps:false,
+            order:0
+          },
+          // Dots: blue circles where restock deliveries arrive
+          {
+            label:'Restock deliveries',
+            data:rkEvents,
+            borderColor:'#fff',
+            backgroundColor:'#0a84ff',
+            borderWidth:1.5,
+            pointRadius:9,
+            pointHoverRadius:13,
+            pointStyle:'circle',
+            showLine:false,
+            spanGaps:false,
+            order:0
+          },
+          // Baseline at 0 — dashed reference
+          {
+            label:'No action (baseline)',
+            data:allBaseline,
+            borderColor:'rgba(255,255,255,.14)',
+            backgroundColor:'transparent',
+            borderWidth:1,
+            borderDash:[5,5],
+            fill:false,
+            tension:0,
+            pointRadius:0,
+            pointHoverRadius:0,
+            order:5
+          }
+        ]
+      },
+      options:{
+        responsive:true,
+        maintainAspectRatio:false,
+        animation:false,
+        interaction:{mode:'index',intersect:false},
+        plugins:{
+          legend:{
+            position:'bottom',
+            labels:{
+              color:'#98989d',font:{size:10},usePointStyle:true,padding:16,
+              filter:function(item){ return item.datasetIndex<5; } // hide baseline from legend
+            }
+          },
+          tooltip:{
+            backgroundColor:'rgba(0,0,0,.92)',
+            titleColor:'#f5f5f7',
+            bodyColor:'#98989d',
+            borderColor:'rgba(255,255,255,.1)',
+            borderWidth:1,
+            padding:14,
+            callbacks:{
+              label:function(c){
+                if(c.raw===null) return null;
+                var v=c.raw;
+                var K='+£'+Math.round(v/1000)+'K';
+                if(c.datasetIndex===0) return ' Total cumulative: '+K;
+                if(c.datasetIndex===1) return ' Working capital freed: '+K;
+                if(c.datasetIndex===2) return ' Revenue recovered: '+K;
+                if(c.datasetIndex===3) return ' ▲ Markdown sale peak this month';
+                if(c.datasetIndex===4) return ' ● Restock delivery this month';
+                return null;
+              },
+              afterBody:function(items){
+                var tot=items.find(function(i){return i.datasetIndex===0&&i.raw!==null});
+                var fr=items.find(function(i){return i.datasetIndex===1&&i.raw!==null});
+                var rc=items.find(function(i){return i.datasetIndex===2&&i.raw!==null});
+                if(!tot||!fr) return;
+                var split='+£'+Math.round(fr.raw/1000)+'K markdowns + £'+Math.round(rc&&rc.raw?rc.raw/1000:0)+'K restocking';
+                return ['',split];
+              }
+            }
+          }
+        },
+        scales:{
+          x:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#636366',font:{size:9},maxRotation:0}},
+          y:{
+            min:0, max:yMax,
+            grid:{color:'rgba(255,255,255,.04)'},
+            ticks:{color:'#636366',font:{size:9},callback:function(v){return'+£'+Math.round(v/1000)+'K'}},
+            title:{display:true,text:'Cumulative financial improvement vs doing nothing',color:'#636366',font:{size:10}}
+          }
+        }
+      }
+    });
+    charts.backtest._revealProg=0; // hidden until Run is pressed
+  }
+
+  // Build monthly timeline cards — show total impact this month
+  // mtm() computes total_this_month whether or not the field exists in data
+  function mtm(s,i){ return s.total_this_month!==undefined ? s.total_this_month : s.cum_total-(i>0?BT.series[i-1].cum_total:0); }
+  var STAGES=['Programme launch','Markdowns at peak','First stock arrives','Deliveries continue','Recovery building','Peak season boost','Steady recovery','Revenue flowing','Winding down','Winding down','Final recovery','Complete'];
+  var tlh='';
+  for(var i=0;i<BT.series.length;i++){
+    var ms=BT.series[i];
+    var parts=ms.month.split('-');
+    var mLabel=mnNames[parseInt(parts[1])-1];
+    var cls=(ms.variants_delivered||0)>0?'marker-blu':'marker-grn';
+    tlh+='<div class="bt-tl-card '+cls+'" onclick="highlightMonth('+i+')" id="btTl'+i+'">';
+    tlh+='<div class="tm">'+mLabel+'</div>';
+    tlh+='<div class="tlbl">'+parts[0]+'</div>';
+    tlh+='<div class="tact">+'+f(mtm(ms,i))+' this month</div>';
+    tlh+='<div class="tcost">Total so far: +'+f(ms.cum_total)+'</div>';
+    tlh+='</div>';
+  }
+  $('btTimeline').innerHTML=tlh;
+  window._btData={series:BT.series,labels:labels,allWith:allWith,allFreed:allFreed,allRecovered:allRecovered,f:f,f2:f2,stages:STAGES};
+}
+
+function highlightMonth(idx){
+  var bd=window._btData; if(!bd) return;
+  var BT=D.backtest, ms=bd.series[idx];
+  document.querySelectorAll('.bt-tl-card').forEach(function(t){t.classList.remove('sel')});
+  var card=document.getElementById('btTl'+idx); if(card) card.classList.add('sel');
+
+  var f=bd.f;
+  var MN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var parts=ms.month.split('-');
+  var monthName=MN[parseInt(parts[1])-1]+' '+parts[0];
+  var stageLabel=(bd.stages&&bd.stages[idx])||'';
+  // Compute fields defensively — works whether data has them or not
+  var thisMonthTotal = ms.total_this_month!==undefined ? ms.total_this_month : ms.cum_total-(idx>0?bd.series[idx-1].cum_total:0);
+  var thisMonthFreed = ms.freed_this_month!==undefined ? ms.freed_this_month : 0;
+  var thisMonthRec   = ms.recovered_this_month!==undefined ? ms.recovered_this_month : 0;
+  var varsDel        = ms.variants_delivered||0;
+  var cumDel         = ms.cumulative_delivered||0;
+  var mdSoldPct      = ms.markdown_sold_pct!==undefined ? ms.markdown_sold_pct : 0;
+  var borderCol=idx===0?'var(--am)':(varsDel>0?'var(--bl)':'var(--gr)');
+
+  var detail='<div class="dh">'+monthName+' &mdash; Month '+(idx+1)+' of 12</div>';
+  detail+='<div style="font-size:10px;color:var(--bl);text-transform:uppercase;letter-spacing:.7px;font-weight:600;margin:-2px 0 14px">'+stageLabel+'</div>';
+
+  // Plain-English narrative per month
+  detail+='<div style="font-size:12px;line-height:1.85;color:var(--t2)">';
+
+  if(idx===0){
+    detail+='StockSense analyses all 645 products using only data from before June 2025 — it cannot see what happens next. It finds two problems and acts on both at once.<br><br>';
+    detail+='<strong style="color:var(--t)">What it identified:</strong><br>';
+    detail+='&bull; '+BT.markdown_flagged+' variants sitting with more than 12 months of unsold stock in the warehouse<br>';
+    detail+='&bull; '+BT.reorder_flagged+' variants either completely empty or about to run out<br><br>';
+    detail+='<strong style="color:var(--t)">What it did:</strong><br>';
+    detail+='&bull; Started a markdown campaign — all '+BT.markdown_flagged+' overstock variants put on sale at 30% off<br>';
+    detail+='&bull; Placed purchase orders to restock the '+BT.stockouts_avoided+' variants confirmed to be stocking out<br>';
+    detail+='&bull; Cash coming in from markdown sales this month: <strong style="color:var(--am)">+'+f(thisMonthFreed)+'</strong><br>';
+    detail+='&bull; New stock is on its way — suppliers take around 60 to 90 days to deliver';
+  } else if(idx===1){
+    detail+='Markdown campaign is in full swing. This is typically the strongest month for discount sell-through — customers respond quickly to the 30% price cut. '+mdSoldPct+'% of the overstock inventory has been cleared so far.<br><br>';
+    detail+='<strong style="color:var(--t)">What happened:</strong><br>';
+    detail+='&bull; Markdown sales continue across all '+BT.markdown_flagged+' variants ('+mdSoldPct+'% sold so far)<br>';
+    detail+='&bull; Cash freed from markdown sales this month: <strong style="color:var(--am)">+'+f(thisMonthFreed)+'</strong><br>';
+    detail+='&bull; No new stock has arrived yet — suppliers are still preparing shipments';
+  } else if(idx===2){
+    detail+='First shipments arrive. Suppliers in Portugal, who have the shortest lead time of around 60 days, deliver first. Previously empty shelves are restocked and those products go back on sale.<br><br>';
+    detail+='<strong style="color:var(--t)">What happened:</strong><br>';
+    detail+='&bull; <strong style="color:var(--bl)">'+varsDel+' products received new stock</strong> and went back on sale<br>';
+    detail+='&bull; Revenue earned from those restocked products this month: <strong style="color:var(--bl)">+'+f(thisMonthRec)+'</strong><br>';
+    detail+='&bull; Markdown campaign still running ('+mdSoldPct+'% of overstock cleared): <strong style="color:var(--am)">+'+f(thisMonthFreed)+'</strong>';
+  } else if(idx===3){
+    detail+='More deliveries arrive as Italian and Turkish suppliers ship their orders. Autumn is beginning to lift demand for heavier products, which helps both the markdown sell-through and the revenue from freshly restocked items.<br><br>';
+    detail+='<strong style="color:var(--t)">What happened:</strong><br>';
+    if(varsDel>0){
+      detail+='&bull; Another <strong style="color:var(--bl)">'+varsDel+' products restocked</strong> — '+cumDel+' total products now back in stock and selling<br>';
+    }
+    detail+='&bull; Markdown sales this month: <strong style="color:var(--am)">+'+f(thisMonthFreed)+'</strong> ('+mdSoldPct+'% of overstock sold)<br>';
+    detail+='&bull; Revenue from restocked products: <strong style="color:var(--bl)">+'+f(thisMonthRec)+'</strong>';
+  } else {
+    var allIn=cumDel>=BT.stockouts_avoided;
+    detail+=(allIn?'All '+cumDel+' products are back in stock and selling. ':'Deliveries continue — '+cumDel+' products restocked so far. ');
+    if(mdSoldPct>=95){
+      detail+='The markdown programme is essentially complete — '+mdSoldPct+'% of overstock has been sold. ';
+    } else {
+      detail+='Markdown campaign still running at '+mdSoldPct+'% sell-through. ';
+    }
+    detail+='Revenue from restocked products is the main driver now.<br><br>';
+    detail+='<strong style="color:var(--t)">This month in numbers:</strong><br>';
+    if(thisMonthFreed>5000){
+      detail+='&bull; Markdown sales still running: <strong style="color:var(--am)">+'+f(thisMonthFreed)+'</strong><br>';
+    }
+    detail+='&bull; Revenue from restocked products: <strong style="color:var(--bl)">+'+f(thisMonthRec)+'</strong><br>';
+    detail+='&bull; Total impact this month: <strong style="color:var(--gr)">+'+f(thisMonthTotal)+'</strong>';
+  }
+  detail+='</div>';
+
+  // Running totals
+  detail+='<div class="dnums" style="margin-top:16px">';
+  detail+='<div><div class="dn" style="color:var(--am)">+'+f(ms.cum_freed)+'</div><div class="dnl">Total freed from markdowns</div></div>';
+  detail+='<div><div class="dn" style="color:var(--bl)">+'+f(ms.cum_recovered)+'</div><div class="dnl">Total revenue recovered</div></div>';
+  detail+='<div><div class="dn" style="color:var(--gr)">+'+f(ms.cum_total)+'</div><div class="dnl">Combined impact so far</div></div>';
+  detail+='</div>';
+
+  // SKU tables
+  if(idx===0 && BT.top_markdown && BT.top_markdown.length){
+    detail+='<div style="margin:16px 0 4px;font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.5px">Top overstock products — cash freed shown is the full 12-month programme total per product</div>';
+    detail+='<div style="font-size:10px;color:var(--t3);margin-bottom:8px">The £'+Math.round(f(ms.cum_freed).replace(/[^0-9.]/g,'')*1)+'K freed in this specific month is the first tranche spread across all '+BT.markdown_flagged+' products. Table shows each product\'s full contribution over the year.</div>';
+    detail+='<table class="bt-detail-tbl"><tr><th>Product</th><th class="tr">Units in stock (May 2025)</th><th class="tr">Units sold (months 13–24)</th><th class="tr">Total proceeds</th></tr>';
+    BT.top_markdown.slice(0,7).forEach(function(m){
+      detail+='<tr><td>'+esc(m.product_name)+'</td><td class="tr t3">'+m.inventory_at_cutoff+'</td><td class="tr t3">'+m.units_sold_after+'</td><td class="tr" style="color:var(--am);font-weight:700">+'+f(m.cash_freed)+'</td></tr>';
+    });
+    detail+='<tr><td colspan="4" style="color:var(--t3);font-size:10px;padding-top:8px">Showing top '+Math.min(7,BT.top_markdown.length)+' of '+BT.markdown_flagged+' overstock products by proceeds. 30% discount applied, 70% sell-through assumed.</td></tr>';
+    detail+='</table>';
+  } else if(idx>=2 && BT.top_reorder && BT.top_reorder.length){
+    detail+='<div style="margin:16px 0 4px;font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.5px">Products that ran out of stock — revenue recovered shown is the full programme total per product</div>';
+    detail+='<div style="font-size:10px;color:var(--t3);margin-bottom:8px">Each product\'s recovery is spread across the months it was empty. The £'+f(thisMonthRec||0)+' recovered this month comes from all '+ms.cumulative_delivered+' restocked products currently selling.</div>';
+    detail+='<table class="bt-detail-tbl"><tr><th>Product</th><th class="tr">Weeks out of stock</th><th class="tr">Total revenue recovered</th></tr>';
+    BT.top_reorder.slice(0,7).forEach(function(r){
+      detail+='<tr><td>'+esc(r.product_name)+'</td><td class="tr t3">'+r.weeks_oos+' weeks</td><td class="tr" style="color:var(--gr);font-weight:700">+'+f(r.revenue_recovered)+'</td></tr>';
+    });
+    detail+='<tr><td colspan="3" style="color:var(--t3);font-size:10px;padding-top:8px">'+BT.stockouts_avoided+' products restocked in total &middot; '+BT.reorder_precision_pct+'% of flagged products confirmed as stocking out &middot; 80% of lost sales counted as recoverable</td></tr>';
+    detail+='</table>';
+  }
+
+  $('btDetail').className='bt-detail on';
+  $('btDetail').style.borderColor=borderCol;
+  $('btDetail').innerHTML=detail;
+  $('btDetail').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function runSimulation(){
+  var bd=window._btData, c=charts.backtest;
+  if(!c||!bd) return;
+
+  $('btRunBtn').disabled=true; $('btRunBtn').style.display='none';
+  $('btResetBtn').style.display='';
+  $('btDetail').className='bt-detail';
+  document.querySelectorAll('.bt-tl-card').forEach(function(t){t.classList.remove('sel')});
+
+  // Use canvas clip-mask driven by requestAnimationFrame
+  // The chart has all data pre-loaded; _revealProg (0→1) controls how much is visible
+  var totalMs=12000; // 12 seconds for 12 months
+  var startTs=null, lastMonthIdx=-1;
+
+  function frame(ts){
+    if(!startTs) startTs=ts;
+    var prog=Math.min((ts-startTs)/totalMs,1);
+    c._revealProg=prog;
+    c.draw(); // re-draw with updated clip mask
+
+    var mIdx=Math.min(Math.floor(prog*12),11);
+    if(mIdx!==lastMonthIdx){
+      lastMonthIdx=mIdx;
+      var ms=bd.series[mIdx];
+      $('simStatus').textContent='Month '+(mIdx+1)+'/12 — +£'+Math.round(ms.cum_total/1e3)+'K gained so far';
+      document.querySelectorAll('.bt-tl-card').forEach(function(t){t.classList.remove('sel')});
+      var card=document.getElementById('btTl'+mIdx);
+      if(card){ card.classList.add('sel'); card.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'}); }
+    }
+
+    if(prog<1){
+      window._simRAF=requestAnimationFrame(frame);
+    } else {
+      c._revealProg=1; c.draw();
+      var last=bd.series[11];
+      $('simStatus').innerHTML=
+        '<span style="color:var(--gr);font-weight:700">+£'+Math.round(last.cum_total/1e3)+'K total</span> &nbsp;=&nbsp; '+
+        '<span style="color:var(--am)">£'+Math.round(last.cum_freed/1e3)+'K</span> freed from overstock &nbsp;+&nbsp; '+
+        '<span style="color:var(--bl)">£'+Math.round(last.cum_recovered/1e3)+'K</span> revenue recovered';
+      window._simRAF=null;
+    }
+  }
+  window._simRAF=requestAnimationFrame(frame);
+}
+
+function resetSimulation(){
+  if(window._simRAF){ cancelAnimationFrame(window._simRAF); window._simRAF=null; }
+  var c=charts.backtest;
+  if(c){ c._revealProg=0; c.draw(); }
+  $('btRunBtn').disabled=false; $('btRunBtn').style.display='';
+  $('btResetBtn').style.display='none';
+  $('simStatus').textContent='';
+  $('btDetail').className='bt-detail';
+  document.querySelectorAll('.bt-tl-card').forEach(function(t){t.classList.remove('sel')});
+}
+
+/* ── TABS ── */
+function switchTab(tab,e){
+  currentTab=tab;
+  var ts=document.querySelectorAll('.tabs .tab');
+  for(var i=0;i<ts.length;i++) ts[i].classList.remove('on');
+  if(e&&e.target) e.target.classList.add('on');
+  var ps=document.querySelectorAll('.panel');
+  for(var i=0;i<ps.length;i++) ps[i].classList.remove('on');
+  $('panel-'+tab).classList.add('on');
+  $('searchInput').style.display=tab==='stocksense'?'':'none';
+  if(tab==='stocksense') renderGrid();
+  if(tab==='cashflow') renderCashFlow();
+  if(tab==='backtest') renderBacktest();
+}
+
+/* ── MODAL ── */
+function openModal(vid){
+  var v=null;
+  for(var i=0;i<D.variants.length;i++){ if(D.variants[i].variant_id===vid){ v=D.variants[i]; break } }
+  if(!v) return;
+  var col=v.stocksense_score>=60?'var(--rd)':v.stocksense_score>=40?'var(--am)':'var(--gr)';
+  var h='<button class="close" onclick="closeModal()">&times;</button>';
+  h+='<div class="mtype">'+esc(v.product_type)+' &middot; '+esc(v.gender_segment)+'</div>';
+  h+='<div class="mname">'+esc(v.product_name)+'</div>';
+  h+='<div class="msku">'+esc(v.sku)+' &middot; '+esc(v.variant_id)+'</div>';
+  h+='<div class="mscore" style="color:'+col+'">'+v.stocksense_score+'</div><div class="mslabel">StockSense Score</div>';
+  h+='<div class="mstats">';
+  h+='<div class="mstat">Inventory<span>'+v.inventory+' units</span></div>';
+  h+='<div class="mstat">Price<span>&pound;'+v.price.toFixed(0)+'</span></div>';
+  h+='<div class="mstat">Landed Cost<span>&pound;'+v.landed_cost.toFixed(0)+'</span></div>';
+  h+='<div class="mstat">Margin<span>'+v.margin_pct.toFixed(0)+'%</span></div>';
+  h+='<div class="mstat">Velocity<span>'+v.velocity_weekly.toFixed(1)+'/wk</span></div>';
+  h+='<div class="mstat">Cover<span>'+(v.inventory<=0?'OOS':v.months_cover>=999?'&infin;':v.months_cover===0?'&lt;1mo':v.months_cover.toFixed(0)+'mo')+'</span></div>';
+  h+='<div class="mstat">3mo Units<span>'+v.units_3mo+'</span></div>';
+  h+='<div class="mstat">12mo Units<span>'+v.units_12mo+'</span></div>';
+  if(v.trend!==0) h+='<div class="mstat">Trend<span style="color:'+(v.trend>0?'var(--gr)':'var(--rd)')+'">'+(v.trend>0?'+':'')+(v.trend*100).toFixed(0)+'%</span></div>';
+  h+='</div>';
+  h+='<div class="mrec '+v.status+'"><strong>'+esc(v.recommendation)+'</strong><br>'+esc(v.recommendation_detail)+'</div>';
+  $('modal').innerHTML=h;
+  $('overlay').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+
+function closeModal(e){
+  if(e&&e.target!==$('overlay')) return;
+  $('overlay').classList.remove('open');
+  document.body.style.overflow='';
+}
+
+function openSettings(){
+  $('settingsOverlay').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closeSettings(e){
+  if(e&&e.target!==$('settingsOverlay')) return;
+  $('settingsOverlay').classList.remove('open');
+  document.body.style.overflow='';
+}
+
+function openMethodology(){
+  $('methodOverlay').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closeMethodology(e){
+  if(e&&e.target!==$('methodOverlay')) return;
+  $('methodOverlay').classList.remove('open');
+  document.body.style.overflow='';
+}
+
+/* ── AI CHAT ── */
+function ask(txt){ $('chatInput').value=txt; send() }
+
+function initDeepSeekKey(){
+  var key='';
+  try { key=sessionStorage.getItem('stocksense_deepseek_key')||''; } catch(e) {}
+  if($('deepseekKey')) $('deepseekKey').value=key;
+  setApiStatus(key?'Connected':'Using built-in answers',key?'on':'');
+}
+
+function setApiStatus(txt,cls){
+  var el=$('apiStatus'); if(!el) return;
+  el.textContent=txt;
+  el.className='api-status '+(cls||'');
+}
+
+function getDeepSeekKey(){
+  return $('deepseekKey') ? $('deepseekKey').value.trim() : '';
+}
+
+function saveDeepSeekKey(){
+  var key=getDeepSeekKey();
+  try {
+    if(key) sessionStorage.setItem('stocksense_deepseek_key',key);
+    else sessionStorage.removeItem('stocksense_deepseek_key');
+  } catch(e) {}
+  setApiStatus(key?'Connected':'Using built-in answers',key?'on':'');
+}
+
+function clearDeepSeekKey(){
+  if($('deepseekKey')) $('deepseekKey').value='';
+  try { sessionStorage.removeItem('stocksense_deepseek_key'); } catch(e) {}
+  setApiStatus('Using built-in answers','');
+}
+
+async function send(){
+  var inp=$('chatInput'),txt=inp.value.trim();
+  if(!txt) return;
+  inp.value='';
+  addMsg('user',esc(txt));
+  chatHistory.push({role:'user',content:txt});
+
+  var key=getDeepSeekKey();
+  if(!key){
+    botWorking(true);
+    setTimeout(function(){ botWorking(false); addMsg('agent',reply(txt)) },600+Math.random()*500);
+    return;
+  }
+
+  saveDeepSeekKey();
+  $('sendBtn').disabled=true;
+  botWorking(true);
+  var typing=addTyping();
+  try {
+    setApiStatus('Thinking…','on');
+    var answer=await askDeepSeek();
+    removeTyping(typing);
+    addMsg('agent',formatAgentText(answer));
+    chatHistory.push({role:'assistant',content:answer});
+    chatHistory=chatHistory.slice(-10);
+    setApiStatus('Connected','on');
+  } catch(e) {
+    removeTyping(typing);
+    addMsg('agent',reply(txt)+'<br><br><span style="color:var(--t3)">Model unavailable: '+esc(e.message||'request failed')+'. Built-in answer shown.</span>');
+    setApiStatus('Connection error — using built-in','err');
+  } finally {
+    botWorking(false);
+    $('sendBtn').disabled=false;
+    inp.focus();
+  }
+}
+
+function botWorking(on){
+  var b=$('ssBot'); if(b) b.classList.toggle('working',!!on);
+}
+
+function addMsg(role,txt){
+  var d=document.createElement('div');
+  d.className='msg '+role;
+  d.innerHTML=txt+'<div class="time">'+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})+'</div>';
+  $('chat').appendChild(d);
+  $('chat').scrollTop=$('chat').scrollHeight;
+}
+
+function addTyping(){
+  var d=document.createElement('div');
+  d.className='msg agent';
+  d.innerHTML='<span class="loading"><span></span><span></span><span></span></span>';
+  $('chat').appendChild(d);
+  $('chat').scrollTop=$('chat').scrollHeight;
+  return d;
+}
+
+function removeTyping(el){
+  if(el&&el.parentNode) el.parentNode.removeChild(el);
+}
+
+function formatAgentText(txt){
+  var h=esc(txt||'');
+  h=h.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>');
+  h=h.replace(/^[-*]\s+/gm,'&bull; ');
+  h=h.replace(/\n/g,'<br>');
+  return h;
+}
+
+async function askDeepSeek(){
+  var res=await fetch(DEEPSEEK_ENDPOINT,{
+    method:'POST',
+    headers:{
+      'Content-Type':'application/json',
+      'Authorization':'Bearer '+getDeepSeekKey()
+    },
+    body:JSON.stringify({
+      model:DEEPSEEK_MODEL,
+      messages:buildDeepSeekMessages(),
+      thinking:{type:'disabled'},
+      temperature:0.2,
+      max_tokens:700,
+      stream:false
+    })
+  });
+  if(!res.ok){
+    var detail='';
+    try { detail=await res.text(); } catch(e) {}
+    detail=detail ? ' - '+detail.slice(0,140).replace(/\s+/g,' ') : '';
+    throw new Error('HTTP '+res.status+detail);
+  }
+  var data=await res.json();
+  var msg=data&&data.choices&&data.choices[0]&&data.choices[0].message&&data.choices[0].message.content;
+  if(!msg) throw new Error('empty response');
+  return msg.trim();
+}
+
+function buildDeepSeekMessages(){
+  return [{role:'system',content:buildStockSenseContext()}].concat(chatHistory.slice(-8));
+}
+
+function buildStockSenseContext(){
+  var s=D.summary, BT=D.backtest;
+  var gbp=function(n){return n>=1e6?'£'+(n/1e6).toFixed(2)+'M':n>=1e3?'£'+Math.round(n/1e3)+'K':'£'+Math.round(n)};
+  var topReorder=D.variants.filter(function(v){return v.status==='reorder'}).slice(0,8).map(function(v){
+    return v.sku+' | '+v.product_name+' | score '+v.stocksense_score+' | stock '+v.inventory+' | '+v.velocity_weekly.toFixed(1)+'/wk | '+gbp(v.revenue_3mo)+' 3mo revenue | '+v.recommendation+' | cost '+gbp(v.recommendation_cost);
+  }).join('\n');
+  var topMarkdown=D.variants.filter(function(v){return v.status==='markdown'}).slice(0,8).map(function(v){
+    return v.sku+' | '+v.product_name+' | stock '+v.inventory+' | '+v.months_cover.toFixed(0)+'mo cover | trapped at cost '+gbp(v.inventory*v.landed_cost)+' | '+v.recommendation;
+  }).join('\n');
+  return [
+    'You are StockSense AI inside a static inventory-management demo for Pretty Fly.',
+    'Answer concisely, commercially, and only from the supplied StockSense context. Use GBP amounts. If you do not have a precise SKU, say to use the All SKUs table.',
+    'Important definitions: trapped cash is landed cost of overstock. Markdown proceeds are retail value after discount and sell-through. Cash-flow revenue is a forward annual run-rate unlocked by funded reorders. Backtest impact is a measured historical 12-month gross impact.',
+    'Current summary as of 1 Jun 2026: '+s.total_variants+' variants; '+s.reorder_count+' reorder; '+s.markdown_count+' markdown; '+s.watch_count+' watch; '+s.healthy_count+' healthy; trapped cash at cost '+gbp(s.total_trapped_cash)+'; markdown retail value '+gbp(s.total_markdown_retail)+'; reorder cost '+gbp(s.total_reorder_cost)+'; lost stockout revenue run-rate '+gbp(s.lost_monthly_revenue)+'/mo or '+gbp(s.lost_monthly_revenue*12)+'/yr; revenue per £1 reorder investment '+s.revenue_multiplier+'x.',
+    'Cash-flow scenarios: Conservative funds 50% of reorders and unlocks about '+gbp(s.lost_monthly_revenue*12*0.5)+'/yr. Moderate funds 80% and unlocks about '+gbp(s.lost_monthly_revenue*12*0.8)+'/yr. Aggressive funds 100% and unlocks about '+gbp(s.lost_monthly_revenue*12)+'/yr.',
+    'Backtest: cutoff '+BT.cutoff+'; measured 12-month gross impact '+gbp(BT.total_impact_gbp)+' = '+gbp(BT.cash_freed_gbp)+' markdown proceeds + '+gbp(BT.revenue_recovered_gbp)+' recovered revenue; '+BT.stockouts_avoided+' stockouts avoided; '+BT.reorder_precision_pct+'% reorder precision.',
+    'Top reorder candidates:\n'+topReorder,
+    'Top markdown candidates:\n'+topMarkdown
+  ].join('\n\n');
+}
+
+function reply(q){
+  var ql=q.toLowerCase(),s=D.summary;
+  var f=function(n){return n>=1e6?'£'+(n/1e6).toFixed(2)+'M':n>=1e3?'£'+(n/1e3).toFixed(0)+'K':'£'+n.toFixed(0)};
+
+  if(ql.indexOf('reorder')!==-1||ql.indexOf('what should i')!==-1){
+    var top=D.variants.filter(function(v){return v.status==='reorder'}).slice(0,5);
+    var r='<strong>'+s.reorder_count+' variants need reordering</strong> &mdash; '+f(s.lost_monthly_revenue)+'/mo in lost revenue.<br><br>';
+    for(var i=0;i<top.length;i++){
+      var v=top[i];
+      r+='&bull; <strong>'+esc(v.product_name)+'</strong> ('+esc(v.product_type)+') &mdash; Score '+v.stocksense_score+', lost '+f(v.revenue_3mo)+' last 3 months. '+esc(v.recommendation)+' at '+f(v.recommendation_cost)+'.<br>';
+    }
+    r+='<br>Top 50 reorder cost: ~'+f(s.total_reorder_cost)+'. Annual recovery potential: '+f(s.lost_monthly_revenue*12)+'.';
+    return r;
+  }
+  if(ql.indexOf('trapped')!==-1||ql.indexOf('how much cash')!==-1){
+    var proceeds=s.total_markdown_retail*0.70*0.70;
+    return '<strong>'+f(s.total_trapped_cash)+' is trapped at cost</strong> in '+s.markdown_count+' overstocked variants (&gt;12 months cover).<br><br>At 30% off and 70% sell-through, expected markdown proceeds are <strong>~'+f(proceeds)+'</strong> &mdash; enough to fund the '+f(s.total_reorder_cost)+' reorder list.<br><br>Every &pound;1 invested into reorders maps to <strong>&pound;'+s.revenue_multiplier+'</strong> of annual revenue run-rate based on current stockout demand.';
+  }
+  if(ql.indexOf('mark down')!==-1||ql.indexOf('markdown')!==-1){
+    var md=D.variants.filter(function(v){return v.status==='markdown'});
+    var r='<strong>'+md.length+' variants should be marked down</strong>.<br><br>Top candidates:<br>';
+    for(var i=0;i<Math.min(5,md.length);i++) r+='&bull; <strong>'+esc(md[i].product_name)+'</strong> &mdash; '+md[i].inventory+' units, '+md[i].months_cover.toFixed(0)+'mo cover, '+f(md[i].inventory*md[i].landed_cost)+' at cost. '+esc(md[i].recommendation)+'<br>';
+    return r;
+  }
+  if(ql.indexOf('cash flow')!==-1||ql.indexOf('scenario')!==-1){
+    var modFreed=s.total_markdown_retail*0.70*0.70;
+    var modInvest=s.total_reorder_cost*0.80;
+    var modMonthly=s.lost_monthly_revenue*0.80;
+    return '<strong>Cash flow forecast &mdash; Moderate deployment:</strong><br><br><strong>Month 1:</strong> Markdown revenue flows in (~'+f(modFreed)+' at 30% off and 70% sell-through). PO deposits of ~'+f(modInvest*0.5)+' go out. <strong>Net positive.</strong><br><br><strong>Month 2:</strong> New stock arrives. Sales resume. <strong>Revenue recovery begins.</strong><br><br><strong>Month 3+:</strong> Annual run-rate unlocked is '+f(modMonthly*12)+'/yr, roughly '+f(modMonthly)+'/mo once replenishment is flowing.<br><br>Net cash position improves without taking a single pound of debt.';
+  }
+  if(ql.indexOf('supplier')!==-1||ql.indexOf('lead time')!==-1){
+    return '<strong>5 suppliers</strong> across Portugal, Italy, Turkey. Average lead time: <strong>71 days</strong>.<br><br>Portugal: fastest turnaround (EUR invoices)<br>Italy: premium fabrics (EUR invoices)<br>Turkey: bulk orders (USD invoices)<br><br>Key insight: the 71-day lead time means revenue recovery isn&rsquo;t instant. Budget 2&ndash;3 months between PO placement and revenue. This is why the cash buffer from markdowns is critical.';
+  }
+  if(ql.indexOf('p&l')!==-1||ql.indexOf('profit')!==-1){
+    return '<strong>P&amp;L snapshot (12-month view):</strong><br><br>Lost monthly revenue run-rate: '+f(s.lost_monthly_revenue)+'/mo<br>Trapped cash at cost: '+f(s.total_trapped_cash)+'<br>Avg StockSense Score: '+s.avg_stocksense_score+'<br>Revenue per &pound;1 reorder investment: '+s.revenue_multiplier+'&times;<br><br><strong>Concerns:</strong> '+s.markdown_count+' overstocked variants, '+f(s.lost_monthly_revenue)+'/mo in stockout losses.<br><br><strong>Opportunity:</strong> Fully restocking the flagged stockouts could unlock '+f(s.lost_monthly_revenue*12)+'/yr of revenue run-rate.';
+  }
+  if(ql.indexOf('score')!==-1||ql.indexOf('stocksense')!==-1){
+    return '<strong>StockSense Score (0&ndash;100):</strong><br><br>&bull; Stock Urgency (0&ndash;50) &mdash; how fast is it running out?<br>&bull; Demand Intensity (0&ndash;30) &mdash; revenue at stake<br>&bull; Trend Bonus (0&ndash;20) &mdash; accelerating demand?<br><br>Current avg: <strong>'+s.avg_stocksense_score+'</strong><br>'+s.reorder_count+' reorder, '+s.markdown_count+' markdown, '+s.watch_count+' watch, '+s.healthy_count+' healthy.';
+  }
+  return 'Ask me about reorders, trapped cash, markdown strategy, supplier lead times, P&amp;L, or the StockSense scoring system. I have the full 645-SKU dataset in context.';
+}
+
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') }
+
+document.addEventListener('keydown',function(e){
+  if(e.key==='Escape'){
+    if($('settingsOverlay')&&$('settingsOverlay').classList.contains('open')) closeSettings();
+    else if($('methodOverlay')&&$('methodOverlay').classList.contains('open')) closeMethodology();
+    else if($('overlay')&&$('overlay').classList.contains('open')) closeModal();
+  }
+});
+</script>
+</body>
+</html>
