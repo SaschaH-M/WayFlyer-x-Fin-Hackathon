@@ -6,12 +6,6 @@ import { api } from "@/lib/api";
 import { gbp } from "@/lib/format";
 import IsoOffice from "@/components/IsoOffice";
 
-const DEPT_ACCENT: Record<string, string> = {
-  Treasury: "#0a84ff", Inventory: "#ff9f0a", Marketing: "#bf5af2",
-  Finance: "#30d158", Merchandising: "#ff375f", Growth: "#64d2ff",
-  Supply: "#ff9f0a", Support: "#5e5ce6", Risk: "#ff453a", Demand: "#30d158",
-};
-
 export default function HQ() {
   const [d, setD] = useState<any>(null);
   const [err, setErr] = useState("");
@@ -63,8 +57,8 @@ export default function HQ() {
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, flexWrap: "wrap", gap: 10 }}>
         <div className="sec-title" style={{ margin: 0 }}>Your office · {d.agents.length} AI agents on the floor</div>
         <div className="view-toggle">
-          <button className={`chip ${view === "floor" ? "active" : ""}`} onClick={() => setView("floor")}>Floor</button>
-          <button className={`chip ${view === "grid" ? "active" : ""}`} onClick={() => setView("grid")}>Grid</button>
+          <button className={`chip ${view === "floor" ? "active" : ""}`} onClick={() => setView("floor")}>🏢 Floor</button>
+          <button className={`chip ${view === "grid" ? "active" : ""}`} onClick={() => setView("grid")}>▦ Grid</button>
         </div>
       </div>
 
@@ -75,19 +69,14 @@ export default function HQ() {
           {d.agents.map((a: any) => (
             <div key={a.id} className="agent-tile" onClick={() => router.push(a.route)}>
               <div className={`stat-dot ${a.status}`}><span className="d" />{a.status}</div>
-              <div className="agent-av" style={{ background: `color-mix(in srgb, ${DEPT_ACCENT[a.dept] || "#0a84ff"} 20%, transparent)`, borderColor: `${DEPT_ACCENT[a.dept] || "#0a84ff"}44` }}>
-                <svg width="20" height="20" viewBox="0 0 20 20">
-                  <circle cx="10" cy="7" r="4.5" fill={DEPT_ACCENT[a.dept] || "#0a84ff"} />
-                  <rect x="4.5" y="11.5" width="11" height="6" rx="2" fill={DEPT_ACCENT[a.dept] || "#0a84ff"} opacity="0.85" />
-                </svg>
-              </div>
+              <div className="agent-av">{a.icon}</div>
               <div className="nm">{a.name}</div>
               <div className="rl">{a.role}</div>
               <div className="mt">{a.metric}</div>
               <div className="hd">{a.headline}</div>
               {a.pending > 0
-                ? <div className="pending-pill">{a.pending} action{a.pending > 1 ? "s" : ""} waiting</div>
-                : <div className="pending-pill" style={{ color: "var(--t3)", background: "rgba(255,255,255,.03)", borderColor: "var(--b)" }}>all clear</div>}
+                ? <div className="pending-pill">⚡ {a.pending} action{a.pending > 1 ? "s" : ""} waiting</div>
+                : <div className="pending-pill" style={{ color: "var(--t3)", background: "rgba(255,255,255,.03)", borderColor: "var(--b)" }}>✓ all clear</div>}
             </div>
           ))}
         </div>

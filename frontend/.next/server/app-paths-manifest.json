@@ -1,0 +1,10 @@
+{
+  "/simulator/page": "app/simulator/page.js",
+  "/chat/page": "app/chat/page.js",
+  "/page": "app/page.js",
+  "/inbox/page": "app/inbox/page.js",
+  "/inventory/page": "app/inventory/page.js",
+  "/marketing/page": "app/marketing/page.js",
+  "/sizing/page": "app/sizing/page.js",
+  "/cashradar/page": "app/cashradar/page.js"
+}

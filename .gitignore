@@ -9,3 +9,6 @@ venv/
 dist/
 build/
 .ipynb_checkpoints/
+node_modules/
+frontend/.next/
+frontend/tsconfig.tsbuildinfo

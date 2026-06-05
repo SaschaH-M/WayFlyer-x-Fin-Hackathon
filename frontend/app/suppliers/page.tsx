@@ -4,6 +4,7 @@ import EChart, { axisBase, catAxis, valAxis, C } from "@/components/EChart";
 import { Explainer, HowItWorks, InfoTip } from "@/components/Explain";
 import { api } from "@/lib/api";
 import { gbp, num } from "@/lib/format";
+import AgentChat from "@/components/AgentChat";
 
 export default function Suppliers() {
   const [d, setD] = useState<any>(null);
@@ -48,7 +49,7 @@ export default function Suppliers() {
   return (
     <>
       <div className="page-head">
-        <div className="eyebrow">Supplier Scorecard</div>
+        <div className="eyebrow">Marco · Supply Chain</div>
         <h1>Your supply chain, scored.</h1>
         <p>{d.headline}</p>
       </div>
@@ -129,6 +130,7 @@ export default function Suppliers() {
         { title: "On-time %", detail: "For each delivery we compare the actual arrival date against the expected date; the share that landed on or before schedule is the on-time rate." },
         { title: "Stockout SKUs", detail: "The count of variants sourced from that supplier that StockSense currently flags as reorder — empty winners whose refill depends on this supplier's speed." },
       ]} />
+      <AgentChat agent={{ name: "Marco", role: "Supply Chain", dept: "Supply", icon: "🚢", greeting: `Hey, I'm Marco. This is the Supply Chain section where I manage your suppliers. I track lead times, on-time rates and stockout risk per supplier.` }} />
     </>
   );
 }

@@ -4,6 +4,7 @@ import EChart, { axisBase, catAxis, valAxis, C } from "@/components/EChart";
 import { Explainer, HowItWorks } from "@/components/Explain";
 import { api } from "@/lib/api";
 import { num } from "@/lib/format";
+import AgentChat from "@/components/AgentChat";
 
 export default function Support() {
   const [d, setD] = useState<any>(null);
@@ -26,7 +27,7 @@ export default function Support() {
   return (
     <>
       <div className="page-head">
-        <div className="eyebrow">Bo · Customer Support</div>
+        <div className="eyebrow">Baymax · Customer Support</div>
         <h1>A support bot that actually closes tickets.</h1>
         <p>Most tickets are tied to an order — so a bot with order and inventory data can resolve them end-to-end, leaving your humans for the hard ones.</p>
       </div>
@@ -64,6 +65,7 @@ export default function Support() {
         { title: "Automatable categories", detail: "order_status, returns/exchanges, drop/restock and discount-code queries are mechanically resolvable." },
         { title: "Hours saved", detail: "(automatable − already-bot) × average resolution minutes — the human time freed for complex cases." },
       ]} />
+      <AgentChat agent={{ name: "Baymax", role: "Customer Support", dept: "Support", icon: "💬", greeting: `Hey, I'm Baymax. This is the Support section where I manage your helpdesk. I triage tickets, identify what can be automated, and link issues to orders for faster resolution.` }} />
     </>
   );
 }

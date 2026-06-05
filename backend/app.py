@@ -91,9 +91,45 @@ def hq_ep():
     return jsonify(hq.compute())
 
 
+_decisions: dict[str, dict] = {}
+
 @app.get("/api/actions")
 def actions_ep():
-    return jsonify({"actions": hq.compute()["actions"]})
+    all_ = hq.compute()["actions"]
+    open_ = [a for a in all_ if a["id"] not in _decisions]
+    return jsonify({"actions": open_})
+
+@app.post("/api/actions/decide")
+def actions_decide_ep():
+    body = request.get_json(force=True, silent=True) or {}
+    aid = body.get("id", "")
+    approved = body.get("approved", False)
+    if not aid:
+        return jsonify({"ok": False, "error": "missing id"}), 400
+    for a in hq.compute()["actions"]:
+        if a["id"] == aid:
+            _decisions[aid] = {"action": a, "approved": approved}
+            return jsonify({"ok": True})
+    return jsonify({"ok": False, "error": "action not found"}), 404
+
+@app.get("/api/actions/history")
+def actions_history_ep():
+    items = []
+    for aid, d in _decisions.items():
+        items.append({"id": aid, "action": d["action"], "approved": d["approved"]})
+    items.sort(key=lambda i: list(_decisions.keys()).index(i["id"]), reverse=True)
+    return jsonify({"history": items})
+
+@app.post("/api/actions/revert")
+def actions_revert_ep():
+    body = request.get_json(force=True, silent=True) or {}
+    aid = body.get("id", "")
+    if not aid:
+        return jsonify({"ok": False, "error": "missing id"}), 400
+    if aid in _decisions:
+        del _decisions[aid]
+        return jsonify({"ok": True})
+    return jsonify({"ok": False, "error": "not found"}), 404
 
 
 @app.get("/api/pnl")
@@ -137,6 +173,36 @@ def agent_ep():
     q = body.get("question", "")
     use_llm = body.get("use_llm", True)
     return jsonify(agent.answer(q, use_llm=use_llm))
+
+
+@app.post("/api/agent-chat")
+def agent_chat_ep():
+    """Chat with an AI agent using the server-side Anthropic key."""
+    import anthropic as _anthropic
+    body = request.get_json(force=True, silent=True) or {}
+    messages = body.get("messages", [])
+    system_prompt = body.get("system", "")
+    if not messages:
+        return jsonify({"error": "missing messages"}), 400
+    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    if not api_key:
+        return jsonify({"error": "ANTHROPIC_API_KEY not configured on server"}), 503
+    # Strip any system messages from the array (Claude uses the system param instead)
+    chat_msgs = [m for m in messages if m.get("role") in ("user", "assistant")]
+    try:
+        client = _anthropic.Anthropic(api_key=api_key)
+        resp = client.messages.create(
+            model="claude-sonnet-4-6",
+            max_tokens=1024,
+            system=system_prompt or "You are a helpful AI agent for Pretty Fly, a London streetwear brand.",
+            messages=chat_msgs,
+        )
+        content = resp.content[0].text
+        return jsonify({"content": content})
+    except _anthropic.APIError as e:
+        return jsonify({"error": f"Claude API error: {e}"}), 502
+    except Exception as e:
+        return jsonify({"error": str(e)}), 502
 
 
 def warm():

@@ -28,11 +28,20 @@ def database_url() -> str:
 @lru_cache(maxsize=1)
 def get_engine():
     url = database_url()
-    kw = {}
+    kw: dict = {}
     if url.startswith("sqlite"):
         kw["connect_args"] = {"check_same_thread": False}
-    eng = create_engine(url, **kw, future=True)
-    return eng
+    elif url.startswith("postgresql"):
+        # psycopg2-binary is optional; skip postgres if it can't be imported
+        try:
+            import psycopg2  # noqa: F401
+        except ImportError:
+            import warnings
+            warnings.warn("psycopg2 not installed — falling back to SQLite", stacklevel=2)
+            sqlite_url = f"sqlite:///{SQLITE_PATH}"
+            kw = {"connect_args": {"check_same_thread": False}}
+            return create_engine(sqlite_url, **kw, future=True)
+    return create_engine(url, **kw, future=True)
 
 
 def backend_name() -> str:

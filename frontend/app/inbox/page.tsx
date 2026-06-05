@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { gbp } from "@/lib/format";
@@ -10,24 +10,34 @@ type Action = {
   severity: "high" | "medium" | "low"; linked: null | string[];
 };
 
+type HistoryItem = { id: string; action: Action; approved: boolean };
+
 export default function Inbox() {
   const [actions, setActions] = useState<Action[] | null>(null);
   const [err, setErr] = useState("");
   const [index, setIndex] = useState(0);
   const [dragX, setDragX] = useState(0);
   const [dragging, setDragging] = useState(false);
-  const [flyOff, setFlyOff] = useState(0);          // animated exit offset
+  const [flyOff, setFlyOff] = useState(0);
   const [approvedCount, setApprovedCount] = useState(0);
   const [approvedValue, setApprovedValue] = useState(0);
   const [toast, setToast] = useState<{ text: string; ok: boolean } | null>(null);
+  const [showHistory, setShowHistory] = useState(false);
+  const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [reverting, setReverting] = useState<string | null>(null);
 
   const startX = useRef(0);
   const animating = useRef(false);
   const toastTimer = useRef<any>(null);
 
+  const loadHistory = useCallback(() => {
+    api.actionHistory().then((d: any) => setHistory(d.history || [])).catch(() => {});
+  }, []);
+
   useEffect(() => {
     api.actions().then((d: any) => setActions(d.actions || [])).catch((e) => setErr(String(e)));
-  }, []);
+    loadHistory();
+  }, [loadHistory]);
 
   const total = actions ? actions.length : 0;
   const current = actions && index < total ? actions[index] : null;
@@ -38,7 +48,6 @@ export default function Inbox() {
     toastTimer.current = setTimeout(() => setToast(null), 1600);
   }
 
-  // commit a decision: animate the top card off-screen, then advance.
   function decide(approve: boolean) {
     if (animating.current || !current) return;
     animating.current = true;
@@ -53,11 +62,27 @@ export default function Inbox() {
     } else {
       showToast("✕ Skipped", false);
     }
+    api.decideAction(card.id, approve).then(() => loadHistory()).catch(() => {});
     setTimeout(() => {
       setIndex((i) => i + 1);
       setFlyOff(0);
       animating.current = false;
     }, 260);
+  }
+
+  function revert(id: string) {
+    setReverting(id);
+    api.revertAction(id).then((r: any) => {
+      if (r.ok) {
+        loadHistory();
+        api.actions().then((d: any) => setActions(d.actions || [])).catch(() => {});
+        setIndex(0);
+        setApprovedCount(0);
+        setApprovedValue(0);
+        showToast("Action reverted", true);
+      }
+      setReverting(null);
+    }).catch(() => setReverting(null));
   }
 
   // ── keyboard ──
@@ -113,11 +138,11 @@ export default function Inbox() {
       </div>
 
       {/* KPI strip */}
-      <div className="grid cols-3" style={{ marginBottom: 24 }}>
-        <div className="card kpi tight">
+      <div className="grid cols-4" style={{ marginBottom: 24 }}>
+        <div className="card kpi tight" style={{ cursor: "pointer" }} onClick={() => { if (showHistory) setShowHistory(false); }}>
           <div className="lbl">Open actions</div>
           <div className="val tnum">{total}</div>
-          <div className="sub">across every department</div>
+          <div className="sub">{showHistory ? "← back to swipe" : "across every department"}</div>
         </div>
         <div className="card kpi tight">
           <div className="lbl">Total £ impact on the table</div>
@@ -129,8 +154,62 @@ export default function Inbox() {
           <div className="val gr tnum">{approvedCount} · {gbp(approvedValue)}</div>
           <div className="sub">queued for execution</div>
         </div>
+        <div className="card kpi tight" style={{ cursor: "pointer" }} onClick={() => { setShowHistory(!showHistory); if (!showHistory) loadHistory(); }}>
+          <div className="lbl">History</div>
+          <div className="val tnum" style={{ color: "var(--bl)" }}>{history.length}</div>
+          <div className="sub">{showHistory ? "hide log" : "view log"}</div>
+        </div>
       </div>
 
+      {showHistory && (
+        <div className="card" style={{ maxWidth: 680, margin: "0 auto 32px", padding: "24px 28px" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+            <h2 style={{ fontSize: 18, fontWeight: 700, letterSpacing: "-.3px" }}>Decision Log</h2>
+            <span style={{ fontSize: 12, color: "var(--t3)" }}>{history.length} item{history.length !== 1 ? "s" : ""}</span>
+          </div>
+          {history.length === 0 ? (
+            <p style={{ fontSize: 13, color: "var(--t2)" }}>No decisions yet. Start swiping.</p>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {history.map((h) => (
+                <div key={h.id} style={{
+                  display: "flex", alignItems: "center", gap: 12, padding: "12px 14px",
+                  background: "var(--bg2)", borderRadius: 12,
+                  border: `1px solid ${h.approved ? "rgba(48,209,88,.2)" : "rgba(255,69,58,.15)"}`,
+                }}>
+                  <span style={{ fontSize: 16, flexShrink: 0 }}>
+                    {h.approved ? <span style={{ color: "var(--gr)" }}>✓</span> : <span style={{ color: "var(--rd)" }}>✕</span>}
+                  </span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: "-.2px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {h.action.title}
+                    </div>
+                    <div style={{ fontSize: 11, color: "var(--t3)", marginTop: 2 }}>
+                      {h.action.agent} · {h.action.dept} · {h.approved ? h.action.verb : "Skipped"}
+                      {h.action.impact_gbp ? ` · ${gbp(h.action.impact_gbp)}` : ""}
+                    </div>
+                  </div>
+                  <button
+                    className="btn"
+                    disabled={reverting === h.id}
+                    onClick={() => revert(h.id)}
+                    style={{
+                      flexShrink: 0, fontSize: 11, padding: "5px 12px",
+                      borderColor: "rgba(255,255,255,.12)", color: "var(--t2)",
+                      opacity: reverting === h.id ? 0.5 : 1,
+                    }}
+                  >
+                    {reverting === h.id ? "..." : "↩ Revert"}
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {!showHistory && (
+        <>
       {index >= total ? (
         <div className="card" style={{ maxWidth: 540, margin: "0 auto", textAlign: "center", padding: "48px 28px" }}>
           <div style={{ fontSize: 52, marginBottom: 8 }}>🎉</div>
@@ -261,6 +340,8 @@ export default function Inbox() {
             Card {Math.min(index + 1, total)} of {total}
           </div>
         </>
+      )}
+      </>
       )}
     </>
   );

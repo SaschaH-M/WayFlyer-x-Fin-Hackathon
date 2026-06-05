@@ -5,6 +5,7 @@ import EChart, { axisBase, catAxis, valAxis, C } from "@/components/EChart";
 import { Explainer, HowItWorks, InfoTip } from "@/components/Explain";
 import { api } from "@/lib/api";
 import { gbp, num } from "@/lib/format";
+import AgentChat from "@/components/AgentChat";
 
 export default function Marketing() {
   const [d, setD] = useState<any>(null);
@@ -49,7 +50,7 @@ export default function Marketing() {
   return (
     <>
       <div className="page-head">
-        <div className="eyebrow">Marketing Command Center</div>
+        <div className="eyebrow">Draper · Marketing</div>
         <h1>You're spending £1M on ads. Some of it prints money. Some of it burns.</h1>
         <p>Every pound of ad spend joined to the revenue it actually drove (Shopify attribution, not the platform's inflated claim), then wired straight into inventory.</p>
       </div>
@@ -162,6 +163,7 @@ export default function Marketing() {
         { title: "Free channels count", detail: "TikTok, Instagram-organic and direct have no ad-spend file, but their orders carry utm_source — so we still show the real revenue they drive, surfacing under-invested winners." },
         { title: "Ads → inventory loop", detail: "Ad impressions are mapped to product types by campaign name, compared 60-days-recent vs prior, then cross-checked against live stock cover. Rising demand + thin stock = an automatic reorder flag." },
       ]} />
+      <AgentChat agent={{ name: "Draper", role: "Marketing", dept: "Marketing", icon: "📣", greeting: `Hey, I'm Draper. This is the Marketing section where I manage your ad spend. I track true ROAS per campaign, reallocate waste to winners, and spot ad surges that signal reorder opportunities.` }} />
     </>
   );
 }

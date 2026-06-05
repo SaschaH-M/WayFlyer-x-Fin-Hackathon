@@ -4,6 +4,7 @@ import EChart, { axisBase, catAxis, valAxis, C } from "@/components/EChart";
 import { Explainer, HowItWorks } from "@/components/Explain";
 import { api } from "@/lib/api";
 import { gbp, num } from "@/lib/format";
+import AgentChat from "@/components/AgentChat";
 
 export default function Customers() {
   const [d, setD] = useState<any>(null);
@@ -31,7 +32,7 @@ export default function Customers() {
   return (
     <>
       <div className="page-head">
-        <div className="eyebrow">Cole · Growth & CRM</div>
+        <div className="eyebrow">Gatsby · Growth & CRM</div>
         <h1>Not all customers are worth the same.</h1>
         <p>Lifetime value swings ~2× depending on where you acquired them. Spend more to win the valuable ones, less on the rest.</p>
       </div>
@@ -73,6 +74,7 @@ export default function Customers() {
         { title: "Lifetime value", detail: "Mean total_spent per customer in that channel — what an average customer from there is worth." },
         { title: "Value vs scale", detail: "High-LTV channels are often small; the count chart shows where there's room to scale acquisition profitably." },
       ]} />
+      <AgentChat agent={{ name: "Gatsby", role: "Growth & CRM", dept: "Growth", icon: "📈", greeting: `Hey, I'm Gatsby. This is the Growth section where I manage your customer base. I measure LTV by channel so you know where to invest in acquisition.` }} />
     </>
   );
 }

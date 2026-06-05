@@ -6,6 +6,7 @@ import { api } from "@/lib/api";
 import { gbp, num } from "@/lib/format";
 import { Explainer, HowItWorks, InfoTip } from "@/components/Explain";
 import EChart, { C } from "@/components/EChart";
+import AgentChat from "@/components/AgentChat";
 
 const STATUS_LABEL: Record<string, string> = {
   reorder: "Reorder",
@@ -92,7 +93,7 @@ function Inner() {
   return (
     <>
       <div className="page-head">
-        <div className="eyebrow">StockSense</div>
+        <div className="eyebrow">Ripley · Inventory</div>
         <h1>645 SKUs, scored and ranked.</h1>
         <p>
           Every variant is scored 0–100 on stock urgency, demand and trend, then paired with a
@@ -229,6 +230,7 @@ function Inner() {
       )}
 
       <HowItWorks title="How the StockSense score works" steps={[{title:"Stock urgency (0–50)",detail:"How many months of stock are left at the current sales rate. Out of stock = 50 (max urgency); over 12 months of cover = 0."},{title:"Demand intensity (0–30)",detail:"How much this SKU sells versus the best-seller over the last 12 months. Bigger sellers score higher — protect the revenue that matters."},{title:"Trend bonus (0–20)",detail:"Is it accelerating? Recent 3-month velocity vs the 12-month average. Heating up earns a bonus so you reorder before it spikes."},{title:"Status",detail:"Out of stock or <2 months cover → Reorder. Over 12 months cover → Mark Down. Score ≥50 → Watch. Otherwise Healthy."}]} />
+      <AgentChat agent={{ name: "Ripley", role: "Inventory", dept: "Inventory", icon: "▦", greeting: `Hey, I'm Ripley. This is the Inventory section where I manage your stock. I score every SKU 0-100 and flag what to reorder, mark down, or watch. Happy to help.` }} />
     </>
   );
 }

@@ -4,6 +4,7 @@ import EChart, { axisBase, catAxis, valAxis, C } from "@/components/EChart";
 import { Explainer, HowItWorks } from "@/components/Explain";
 import { api } from "@/lib/api";
 import { num } from "@/lib/format";
+import AgentChat from "@/components/AgentChat";
 
 const SZ = ["XS", "S", "M", "L", "XL"];
 
@@ -29,7 +30,7 @@ export default function Sizing() {
   return (
     <>
       <div className="page-head">
-        <div className="eyebrow">Vera · Merchandising & Fit</div>
+        <div className="eyebrow">Edna · Merchandising & Fit</div>
         <h1>Stop losing money to bad fit.</h1>
         <p>{share}% of every refund is a sizing problem. Order to the size curve customers actually buy — and fix the lines that run small or large.</p>
       </div>
@@ -67,6 +68,7 @@ export default function Sizing() {
         { title: "Return attribution", detail: "Each refund's variant ids are matched to their size, and the reason (too small / too large) tallied per size." },
         { title: "Fit bias", detail: "When 'too small' and 'too large' diverge by >15%, the range systematically runs small or large — grade up/down or add a fit note." },
       ]} />
+      <AgentChat agent={{ name: "Edna", role: "Merchandising & Fit", dept: "Merchandising", icon: "📐", greeting: `Hey, I'm Edna. This is the Merchandising section where I manage fit and sizing. I analyse returns by size, flag ranges that run small or large, and build your real size curve.` }} />
     </>
   );
 }

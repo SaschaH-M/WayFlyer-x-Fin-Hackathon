@@ -5,6 +5,7 @@ import { Explainer, HowItWorks, InfoTip } from "@/components/Explain";
 import { api } from "@/lib/api";
 import { gbp, fmtMonth } from "@/lib/format";
 import CountUp from "@/components/CountUp";
+import AgentChat from "@/components/AgentChat";
 
 // Month-end decision cutoffs the operator can slide between. Index 5 = the
 // canonical month-12 split; earlier cutoffs give the tool less history but a
@@ -86,7 +87,7 @@ export default function Simulator() {
   return (
     <>
       <div className="page-head">
-        <div className="eyebrow">The proof point</div>
+        <div className="eyebrow">Delphi · Demand Forecast</div>
         <h1>If Pretty Fly had used this tool, it would be <CountUp value={h.total_impact_gbp} format={gbp} /> better off.</h1>
         <p>Trained on data up to the <b>{CUTOFFS[idx].l}</b> cutoff ({d.cutoff}) only, then replayed against the <b>real</b> months that followed — actual sales, actual stockouts, actual leftover stock. No peeking.</p>
       </div>
@@ -177,6 +178,7 @@ export default function Simulator() {
           </table>
         </div>
       </div>
+      <AgentChat agent={{ name: "Delphi", role: "Demand Forecast", dept: "Demand", icon: "🔮", greeting: `Hey, I'm Delphi. This is the Demand Forecast section where I predict what your customers will buy next. I backtest against real outcomes to prove the tool's impact.` }} />
     </>
   );
 }

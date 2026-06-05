@@ -5,6 +5,7 @@ import { Explainer, HowItWorks, InfoTip } from "@/components/Explain";
 import { api } from "@/lib/api";
 import { gbp, fmtDate } from "@/lib/format";
 import Link from "next/link";
+import AgentChat from "@/components/AgentChat";
 
 const DAY = 86400000;
 const daysBetween = (a: string, b: string) =>
@@ -156,7 +157,7 @@ export default function CashRadar() {
   return (
     <>
       <div className="page-head">
-        <div className="eyebrow">Cash Radar</div>
+        <div className="eyebrow">Gordon · Cash & Treasury</div>
         <h1>Pretty Fly hit {gbp(m.actual_nadir_gbp)} on {fmtDate(m.actual_nadir_date)}.</h1>
         <p>Drag the timeline to any day in the last two years to see exactly what the next 30 days of cash
           looked like <i>from there</i> — using only the data that was knowable on that date.</p>
@@ -260,7 +261,8 @@ export default function CashRadar() {
               <div style={{ marginTop: 12, color: "var(--gr)", fontWeight: 600, fontSize: 13 }}>New projected low: {gbp(demo.remedies.C.new_min_balance)}</div>
             </div>
           </div>
-        </>
+      <AgentChat agent={{ name: "Gordon", role: "Cash & Treasury", dept: "Treasury", icon: "📡", greeting: `Hey, I'm Gordon. This is the Treasury section where I manage your cash flow. I project 30 days forward, flag danger zones, and find remedies before a crisis hits.` }} />
+    </>
       ) : (
         <div className="card" style={{ marginBottom: 16, fontSize: 13, color: "var(--t2)" }}>
           {status === "CLEAR"

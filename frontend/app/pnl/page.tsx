@@ -4,6 +4,7 @@ import EChart, { axisBase, catAxis, valAxis, C } from "@/components/EChart";
 import { Explainer, HowItWorks, InfoTip } from "@/components/Explain";
 import { api } from "@/lib/api";
 import { gbp, num, fmtMonth } from "@/lib/format";
+import AgentChat from "@/components/AgentChat";
 
 export default function Pnl() {
   const [d, setD] = useState<any>(null);
@@ -61,7 +62,7 @@ export default function Pnl() {
   return (
     <>
       <div className="page-head">
-        <div className="eyebrow">Profit &amp; Loss</div>
+        <div className="eyebrow">Hamilton · Finance</div>
         <h1>Your P&amp;L, without an accountant.</h1>
         <p>Every month, automatically: what you sold, what those goods actually cost, and what was left after overheads, fees and refunds.</p>
       </div>
@@ -129,6 +130,7 @@ export default function Pnl() {
           { title: "Opex from bank categories", detail: "Overheads are categorised from bank transactions (rent, software, ads, payroll) and subtracted to reach net profit." },
         ]}
       />
+      <AgentChat agent={{ name: "Hamilton", role: "Finance / P&L", dept: "Finance", icon: "⚖", greeting: `Hey, I'm Hamilton. This is the Finance section where I manage your P&L. I track revenue, COGS, fees and margins across 24 months — every line reconciled to bank data.` }} />
     </>
   );
 }
