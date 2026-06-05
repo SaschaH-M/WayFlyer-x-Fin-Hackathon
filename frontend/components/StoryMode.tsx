@@ -58,7 +58,7 @@ export default function StoryMode() {
           <span style={{ fontSize: 15, fontWeight: 800, letterSpacing: -.3 }}>{s.title}</span>
           <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
             <button className="chip" onClick={() => setI(Math.max(0, i - 1))} disabled={i === 0}>‹ Back</button>
-            <button className="chip" onClick={() => setAuto((a) => !a)}>{auto ? "⏸ Pause" : "▶ Auto"}</button>
+            <button className="chip" onClick={() => setAuto((a) => !a)}>{auto ? "Pause" : "Auto"}</button>
             <button className="chip" onClick={() => (i < STEPS.length - 1 ? setI(i + 1) : stop())}>{i < STEPS.length - 1 ? "Next ›" : "Finish"}</button>
             <button className="chip" onClick={stop}>✕ Exit</button>
           </div>
