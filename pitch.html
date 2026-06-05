@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StockSense · Pretty Fly Pitch</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#000;--bg2:rgba(28,28,30,.7);--bg3:rgba(28,28,30,.9);
+    --b:rgba(255,255,255,.06);--bh:rgba(255,255,255,.16);
+    --t:#f5f5f7;--t2:#98989d;--t3:#6e6e73;
+    --bl:#0a84ff;--gr:#30d158;--rd:#ff453a;--am:#ff9f0a;--pu:#bf5af2;--pk:#ff375f;
+  }
+  html,body{
+    width:100%;height:100%;overflow:hidden;
+    font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+    background:var(--bg);color:var(--t);-webkit-font-smoothing:antialiased;
+  }
+
+  /* ── Deck container ── */
+  #deck{position:relative;width:100%;height:100%;overflow:hidden}
+
+  .slide{
+    position:absolute;inset:0;
+    display:flex;flex-direction:column;justify-content:center;align-items:center;
+    padding:60px 80px 100px;
+    transform:translateX(100%);
+    transition:transform .45s cubic-bezier(.4,0,.2,1);
+    will-change:transform;
+    text-align:center;
+  }
+  .slide.active{transform:translateX(0)}
+  .slide.prev{transform:translateX(-100%)}
+
+  /* ── Top bar (persistent) ── */
+  .topbar{
+    position:fixed;top:0;left:0;right:0;z-index:200;
+    background:rgba(0,0,0,.7);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+    border-bottom:1px solid var(--b);
+    padding:10px 24px;
+    display:flex;align-items:center;justify-content:space-between;
+    font-size:13px;
+  }
+  .tb-brand{font-weight:800;letter-spacing:-.3px}
+  .tb-brand span{color:var(--gr)}
+  .tb-time{font-size:11px;color:var(--t3);font-style:italic}
+  .tb-nav{display:flex;gap:10px;align-items:center}
+  .tb-btn{
+    font-family:inherit;font-size:11px;font-weight:600;
+    padding:6px 14px;border-radius:14px;border:1px solid var(--b);
+    background:transparent;color:var(--t2);cursor:pointer;transition:all .15s;
+  }
+  .tb-btn:hover{color:var(--t);border-color:var(--bh);background:rgba(255,255,255,.05)}
+  .tb-btn.primary{background:var(--bl);border-color:var(--bl);color:#fff}
+  .tb-btn.primary:hover{background:#0070dc}
+
+  /* ── Bottom bar (persistent) ── */
+  .bottombar{
+    position:fixed;bottom:0;left:0;right:0;z-index:200;
+    padding:14px 28px;
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  .bb-nav{display:flex;gap:10px;align-items:center}
+  .nav-btn{
+    font-family:inherit;font-size:13px;font-weight:600;
+    padding:9px 20px;border-radius:14px;border:1px solid var(--b);
+    background:rgba(28,28,30,.9);color:var(--t2);cursor:pointer;
+    transition:all .15s;
+    backdrop-filter:blur(12px);
+  }
+  .nav-btn:hover{color:var(--t);border-color:var(--bh)}
+  .nav-btn.fwd{background:var(--bl);border-color:var(--bl);color:#fff}
+  .nav-btn.fwd:hover{background:#0070dc}
+  .nav-btn:disabled{opacity:.3;cursor:default}
+  .slide-counter{
+    font-size:12px;font-weight:600;color:var(--t3);
+    font-variant-numeric:tabular-nums;letter-spacing:.5px;
+    background:rgba(28,28,30,.9);border:1px solid var(--b);
+    padding:7px 14px;border-radius:12px;backdrop-filter:blur(12px);
+  }
+
+  /* ── Dot progress ── */
+  .dots{display:flex;gap:6px;align-items:center}
+  .dot{width:6px;height:6px;border-radius:50%;background:var(--b);border:1px solid var(--bh);transition:all .3s}
+  .dot.active{background:var(--t);border-color:var(--t);width:20px;border-radius:3px}
+
+  /* ── Eyebrow ── */
+  .eyebrow{
+    font-size:11px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;
+    margin-bottom:20px;
+  }
+  .eyebrow.rd{color:var(--rd)}
+  .eyebrow.bl{color:var(--bl)}
+  .eyebrow.gr{color:var(--gr)}
+  .eyebrow.am{color:var(--am)}
+  .eyebrow.pk{color:var(--pk)}
+  .eyebrow.pu{color:var(--pu)}
+  .eyebrow.t3{color:var(--t3)}
+
+  /* ── Slide 1 ── */
+  #s1{background:radial-gradient(ellipse 80% 60% at 50% 40%,rgba(255,69,58,.08) 0%,transparent 70%)}
+  .hero-num{
+    font-size:clamp(80px,16vw,180px);font-weight:900;letter-spacing:-.05em;
+    line-height:1;color:var(--rd);font-variant-numeric:tabular-nums;
+    text-shadow:0 0 80px rgba(255,69,58,.3);
+  }
+  .hero-headline{
+    font-size:clamp(22px,3.5vw,40px);font-weight:800;letter-spacing:-.02em;
+    line-height:1.2;margin-top:24px;margin-bottom:12px;
+  }
+  .hero-sub{font-size:clamp(14px,2vw,20px);color:var(--t2);font-weight:400;line-height:1.5}
+
+  /* ── Slide 2 ── */
+  #s2{background:radial-gradient(ellipse 70% 50% at 50% 40%,rgba(10,132,255,.06) 0%,transparent 65%)}
+  .s2-headline{
+    font-size:clamp(28px,4.5vw,52px);font-weight:800;letter-spacing:-.03em;
+    line-height:1.15;margin-bottom:40px;
+  }
+  .bullet-list{list-style:none;display:flex;flex-direction:column;gap:18px;max-width:680px;text-align:left}
+  .bullet-list li{
+    display:flex;align-items:center;gap:18px;
+    font-size:clamp(15px,2vw,21px);font-weight:500;color:var(--t2);line-height:1.4;
+    padding:16px 20px;border-radius:14px;
+    background:var(--bg2);border:1px solid var(--b);
+  }
+  .bullet-list li span.icon{font-size:20px;flex-shrink:0}
+  .bullet-list li b{color:var(--t)}
+
+  /* ── Slide 3 ── */
+  #s3{background:radial-gradient(ellipse 70% 50% at 50% 40%,rgba(255,159,10,.05) 0%,transparent 65%)}
+  .s3-headline{font-size:clamp(22px,3.5vw,40px);font-weight:800;letter-spacing:-.02em;margin-bottom:8px}
+  .s3-sub{font-size:14px;color:var(--t2);margin-bottom:36px;max-width:600px}
+  .timeline{display:flex;gap:0;align-items:stretch;max-width:900px;width:100%}
+  .tl-item{flex:1;display:flex;flex-direction:column;align-items:center;position:relative}
+  .tl-item:not(:last-child)::after{
+    content:'';position:absolute;top:24px;left:50%;width:100%;
+    height:2px;background:linear-gradient(90deg,var(--b) 0%,var(--b) 100%);
+    z-index:0;
+  }
+  .tl-dot{
+    width:48px;height:48px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-size:12px;font-weight:700;flex-shrink:0;position:relative;z-index:1;
+    margin-bottom:14px;
+  }
+  .tl-dot.ok{background:rgba(10,132,255,.15);border:2px solid var(--bl);color:var(--bl)}
+  .tl-dot.warn{background:rgba(255,159,10,.15);border:2px solid var(--am);color:var(--am)}
+  .tl-dot.crit{background:rgba(255,69,58,.15);border:2px solid var(--rd);color:var(--rd)}
+  .tl-date{font-size:11px;font-weight:700;letter-spacing:.5px;color:var(--t3);margin-bottom:6px;text-align:center}
+  .tl-val{font-size:clamp(18px,2.5vw,26px);font-weight:800;letter-spacing:-.02em;line-height:1;margin-bottom:6px;font-variant-numeric:tabular-nums}
+  .tl-val.rd{color:var(--rd)}
+  .tl-val.am{color:var(--am)}
+  .tl-label{font-size:11px;color:var(--t3);line-height:1.4;text-align:center;max-width:130px}
+  .acc-badge{
+    display:inline-flex;align-items:center;gap:6px;
+    margin-top:24px;font-size:13px;font-weight:600;
+    padding:8px 18px;border-radius:100px;
+    background:rgba(48,209,88,.1);border:1px solid rgba(48,209,88,.25);color:var(--gr);
+  }
+
+  /* ── Slide 4 ── */
+  #s4{background:radial-gradient(ellipse 70% 50% at 50% 40%,rgba(48,209,88,.04) 0%,transparent 65%)}
+  .s4-headline{font-size:clamp(20px,3vw,36px);font-weight:800;letter-spacing:-.02em;margin-bottom:8px}
+  .s4-sub{font-size:13px;color:var(--t2);margin-bottom:32px;font-style:italic}
+  .remedy-row{display:flex;gap:16px;width:100%;max-width:1000px}
+  .rem-card{
+    flex:1;background:var(--bg2);border:1px solid var(--b);border-radius:18px;
+    padding:24px 20px;text-align:left;position:relative;overflow:hidden;
+  }
+  .rem-card::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:18px 18px 0 0}
+  .rem-card.ra::after{background:var(--bl)}
+  .rem-card.rb::after{background:var(--am)}
+  .rem-card.rc::after{background:var(--pu)}
+  .rem-tag{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px}
+  .rem-card.ra .rem-tag{color:var(--bl)}
+  .rem-card.rb .rem-tag{color:var(--am)}
+  .rem-card.rc .rem-tag{color:var(--pu)}
+  .rem-head{font-size:clamp(13px,1.4vw,16px);font-weight:700;line-height:1.3;margin-bottom:12px}
+  .rem-stat{display:flex;gap:16px;margin-bottom:12px;flex-wrap:wrap}
+  .rem-kv{display:flex;flex-direction:column;gap:3px}
+  .rem-kv .k{font-size:10px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;color:var(--t3)}
+  .rem-kv .v{font-size:18px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+  .rem-kv .v.gr{color:var(--gr)}
+  .rem-kv .v.warn{color:var(--am)}
+  .rem-detail{font-size:12px;color:var(--t2);line-height:1.55}
+
+  /* ── Slide 5 ── */
+  #s5{background:radial-gradient(ellipse 70% 50% at 50% 40%,rgba(255,55,95,.06) 0%,transparent 65%)}
+  .s5-headline{font-size:clamp(22px,3.5vw,44px);font-weight:800;letter-spacing:-.03em;margin-bottom:36px}
+  .womens-stats{display:flex;gap:20px;max-width:880px;width:100%;margin-bottom:28px}
+  .ws-card{
+    flex:1;background:var(--bg2);border:1px solid var(--b);border-radius:16px;
+    padding:24px 20px;text-align:left;position:relative;overflow:hidden;
+  }
+  .ws-card::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;border-radius:16px 16px 0 0;background:linear-gradient(90deg,var(--pk),transparent)}
+  .ws-lbl{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--t3);margin-bottom:10px}
+  .ws-val{font-size:clamp(24px,3vw,38px);font-weight:900;letter-spacing:-.03em;line-height:1;font-variant-numeric:tabular-nums}
+  .ws-val.pk{color:var(--pk)}
+  .ws-val.gr{color:var(--gr)}
+  .ws-val.rd{color:var(--rd)}
+  .ws-context{font-size:12px;color:var(--t2);margin-top:6px}
+  .ws-delta{font-size:12px;font-weight:600;color:var(--gr)}
+  .kicker-line{
+    font-size:clamp(15px,2vw,20px);font-style:italic;color:var(--t2);line-height:1.5;
+    max-width:620px;
+  }
+  .kicker-line em{color:var(--pk);font-weight:500}
+
+  /* ── Slide 6 ── */
+  #s6{background:radial-gradient(ellipse 70% 50% at 50% 40%,rgba(48,209,88,.06) 0%,transparent 65%)}
+  .s6-headline{font-size:clamp(22px,3.5vw,44px);font-weight:800;letter-spacing:-.03em;margin-bottom:32px}
+  .screens-row{display:flex;gap:12px;margin-bottom:28px}
+  .screen-pill{
+    padding:10px 22px;border-radius:100px;
+    font-size:13px;font-weight:600;
+    border:1px solid var(--b);background:var(--bg2);color:var(--t2);
+  }
+  .screen-pill.active-pill{background:rgba(10,132,255,.12);border-color:rgba(10,132,255,.35);color:var(--bl)}
+  .verifiable{
+    font-size:clamp(13px,1.6vw,16px);color:var(--t2);line-height:1.6;
+    max-width:600px;margin-bottom:28px;
+  }
+  .verifiable b{color:var(--t)}
+  .closer{
+    font-size:clamp(16px,2.2vw,22px);font-weight:700;
+    line-height:1.4;max-width:680px;
+    padding:22px 28px;border-radius:16px;
+    background:rgba(48,209,88,.07);border:1px solid rgba(48,209,88,.2);
+    color:var(--t);
+  }
+  .closer span{color:var(--gr)}
+
+  /* ── Key-listener hint ── */
+  .key-hint{
+    position:fixed;bottom:60px;left:50%;transform:translateX(-50%);
+    font-size:11px;color:var(--t3);
+    pointer-events:none;opacity:0;transition:opacity 1s;
+  }
+  .key-hint.show{opacity:1}
+</style>
+</head>
+<body>
+
+<!-- Persistent top bar -->
+<div class="topbar">
+  <div class="tb-brand">Stock<span>Sense</span></div>
+  <div class="tb-time">3-minute pitch · Pretty Fly</div>
+  <div class="tb-nav">
+    <a href="index.html" style="text-decoration:none">
+      <button class="tb-btn">← Cash Radar Demo</button>
+    </a>
+    <a href="womens_insight.html" style="text-decoration:none">
+      <button class="tb-btn">Growth Insight</button>
+    </a>
+  </div>
+</div>
+
+<!-- Deck -->
+<div id="deck">
+
+  <!-- SLIDE 1: THE HOOK -->
+  <div class="slide active" id="s1">
+    <div class="eyebrow rd">3 September 2024</div>
+    <div class="hero-num">−£274,113</div>
+    <div class="hero-headline">Pretty Fly went £274,000 overdrawn.</div>
+    <div class="hero-sub">The data knew 20 days early. Nobody was watching.</div>
+  </div>
+
+  <!-- SLIDE 2: THE PRODUCT -->
+  <div class="slide" id="s2">
+    <div class="eyebrow bl">The product</div>
+    <div class="s2-headline">Cash Radar — a forward-looking<br>cash command centre.</div>
+    <ul class="bullet-list">
+      <li><span class="icon">📅</span><span>Watches <b>known PO schedules</b>, trailing payouts, and overheads</span></li>
+      <li><span class="icon">📈</span><span>Projects your <b>cash position 30 days forward</b>, every single day</span></li>
+      <li><span class="icon">⚡</span><span>Flags danger <b>20 days early</b> with three costed fixes — instantly</span></li>
+    </ul>
+  </div>
+
+  <!-- SLIDE 3: THE DEMO MOMENT -->
+  <div class="slide" id="s3">
+    <div class="eyebrow am">The demo moment</div>
+    <div class="s3-headline">14 August 2024. 20 days before the crash.</div>
+    <div class="s3-sub">Three POs placed in June and July. All predictable. No tool was watching.</div>
+    <div class="timeline">
+      <div class="tl-item">
+        <div class="tl-dot ok">1</div>
+        <div class="tl-date">14 Aug 2024</div>
+        <div class="tl-val am">−£79,616</div>
+        <div class="tl-label">Balance today.<br>Projection flags nadir: −£261,435 on Sep 3.</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot warn">2</div>
+        <div class="tl-date">2 Sep 2024</div>
+        <div class="tl-val rd">−£163K out</div>
+        <div class="tl-label">Three PO balances clear simultaneously.</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot crit">3</div>
+        <div class="tl-date">3 Sep 2024</div>
+        <div class="tl-val rd">−£274,114</div>
+        <div class="tl-label">Actual nadir. Projection was 95% accurate.</div>
+      </div>
+    </div>
+    <div class="acc-badge">✓ Projection accuracy: 95% · 20 days forewarning</div>
+  </div>
+
+  <!-- SLIDE 4: THE THREE FIXES -->
+  <div class="slide" id="s4">
+    <div class="eyebrow gr">Three costed fixes</div>
+    <div class="s4-headline">From the same anchor date: 14 August.</div>
+    <div class="s4-sub">Honest framing: financing is the last resort, not the first.</div>
+    <div class="remedy-row">
+      <div class="rem-card ra">
+        <div class="rem-tag">A · Delay a PO</div>
+        <div class="rem-head">Slip Porto Knit balance by 21 days → new low −£158K</div>
+        <div class="rem-stat">
+          <div class="rem-kv"><span class="k">New low</span><span class="v gr">−£158K</span></div>
+          <div class="rem-kv"><span class="k">Cost</span><span class="v" style="color:var(--t)">One email</span></div>
+        </div>
+        <div class="rem-detail">Push PO-2024-0001 (£103,374 to Porto Knit Co.) from 2 Sep to 23 Sep. Typical EU supplier accepts 2–3 week extension.</div>
+      </div>
+      <div class="rem-card rb">
+        <div class="rem-tag">B · Discount overstock</div>
+        <div class="rem-head">26 overstock SKUs at 30% off → frees £287,762 → new low −£80K</div>
+        <div class="rem-stat">
+          <div class="rem-kv"><span class="k">New low</span><span class="v gr">−£80K</span></div>
+          <div class="rem-kv"><span class="k">Cash freed</span><span class="v warn">+£288K</span></div>
+        </div>
+        <div class="rem-detail">SKUs with >12 months cover. 30% off at 70% sell-through = Σ(units × price × 0.70 × 0.70) across 26 variants.</div>
+      </div>
+      <div class="rem-card rc">
+        <div class="rem-tag">C · Wayflyer bridge</div>
+        <div class="rem-head">£281K bridge, 90 days, fee £16,629 → new low +£20K</div>
+        <div class="rem-stat">
+          <div class="rem-kv"><span class="k">New low</span><span class="v gr">+£20K</span></div>
+          <div class="rem-kv"><span class="k">All-in fee</span><span class="v" style="color:var(--rd)">−£16,629</span></div>
+        </div>
+        <div class="rem-detail">Most expensive option. Use only when A and B can't close the gap. 24% APR, 90-day term, repayment outside projection window.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 5: THE SECOND FINDING -->
+  <div class="slide" id="s5">
+    <div class="eyebrow pk">The second finding</div>
+    <div class="s5-headline">While we were in the data,<br>we found something else.</div>
+    <div class="womens-stats">
+      <div class="ws-card">
+        <div class="ws-lbl">Lifetime value</div>
+        <div class="ws-val pk">£336</div>
+        <div class="ws-context">Womenswear LTV vs <span class="ws-delta">£289</span> menswear</div>
+        <div class="ws-delta" style="margin-top:6px">+16% higher ↑</div>
+      </div>
+      <div class="ws-card">
+        <div class="ws-lbl">Ad spend share vs revenue share</div>
+        <div class="ws-val gr">3.6%</div>
+        <div class="ws-context">Revenue share with only <span style="color:var(--am);font-weight:600">3.1%</span> of total spend</div>
+        <div class="ws-delta" style="margin-top:6px">More efficient already ↑</div>
+      </div>
+      <div class="ws-card">
+        <div class="ws-lbl">Google spend — womenswear</div>
+        <div class="ws-val rd">£0</div>
+        <div class="ws-context">Zero Google investment in the highest-LTV segment</div>
+        <div style="font-size:12px;color:var(--am);font-weight:600;margin-top:6px">Untapped ↗</div>
+      </div>
+    </div>
+    <p class="kicker-line">"Launched 6 months ago. No Google spend. Already your best customer. <em>Imagine what happens when you actually invest.</em>"</p>
+  </div>
+
+  <!-- SLIDE 6: THE CLOSE -->
+  <div class="slide" id="s6">
+    <div class="eyebrow gr">StockSense</div>
+    <div class="s6-headline">Survive the crisis. Then grow smarter.</div>
+    <div class="screens-row">
+      <div class="screen-pill active-pill">Cash Radar</div>
+      <div class="screen-pill active-pill">Inventory</div>
+      <div class="screen-pill active-pill">Growth Insight</div>
+    </div>
+    <p class="verifiable">
+      Built on <b>24 months</b> of reconciled Pretty Fly data —
+      560 bank rows, 21 purchase orders, 645 variants.<br>
+      Every number on screen is <b>verifiable</b>.
+    </p>
+    <div class="closer">
+      Would Pretty Fly pay for this?<br>
+      <span>They already lost £274k not having it.</span>
+    </div>
+  </div>
+
+</div>
+
+<!-- Persistent bottom bar -->
+<div class="bottombar">
+  <div class="bb-nav">
+    <button class="nav-btn" id="btn-prev" onclick="prev()" disabled>← Prev</button>
+    <button class="nav-btn fwd" id="btn-next" onclick="next()">Next →</button>
+  </div>
+  <div class="dots" id="dots"></div>
+  <div class="slide-counter" id="counter">1 / 6</div>
+</div>
+
+<div class="key-hint" id="key-hint">Use ← → arrow keys to navigate</div>
+
+<script>
+var TOTAL = 6;
+var current = 1;
+
+// Build dots
+var dotsEl = document.getElementById('dots');
+for (var i = 1; i <= TOTAL; i++) {
+  var d = document.createElement('div');
+  d.className = 'dot' + (i === 1 ? ' active' : '');
+  d.id = 'dot-' + i;
+  d.style.cursor = 'pointer';
+  (function(n){ d.onclick = function(){ goTo(n); }; })(i);
+  dotsEl.appendChild(d);
+}
+
+function goTo(n) {
+  if (n < 1 || n > TOTAL) return;
+  var slides = document.querySelectorAll('.slide');
+  slides.forEach(function(s, idx) {
+    s.classList.remove('active', 'prev');
+    if (idx + 1 < n) s.classList.add('prev');
+    else if (idx + 1 === n) s.classList.add('active');
+  });
+  document.querySelectorAll('.dot').forEach(function(d, idx) {
+    d.classList.toggle('active', idx + 1 === n);
+  });
+  current = n;
+  document.getElementById('counter').textContent = n + ' / ' + TOTAL;
+  document.getElementById('btn-prev').disabled = (n === 1);
+  document.getElementById('btn-next').disabled = (n === TOTAL);
+  document.getElementById('btn-next').classList.toggle('fwd', n < TOTAL);
+}
+
+function next() { goTo(current + 1); }
+function prev() { goTo(current - 1); }
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next();
+  else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') prev();
+  else if (e.key === 'Escape') goTo(1);
+});
+
+// Show key hint briefly
+setTimeout(function(){
+  var hint = document.getElementById('key-hint');
+  hint.classList.add('show');
+  setTimeout(function(){ hint.classList.remove('show'); }, 3000);
+}, 600);
+</script>
+</body>
+</html>
