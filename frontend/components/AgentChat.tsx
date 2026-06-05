@@ -100,11 +100,6 @@ export default function AgentChat({ agent }: { agent: { name: string; role: stri
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [hoverAgent, setHoverAgent] = useState<string | null>(null);
-  const [showSettings, setShowSettings] = useState(false);
-  const [keyInput, setKeyInput] = useState("");
-  const [savedKey, setSavedKey] = useState(() =>
-    typeof window !== "undefined" ? (localStorage.getItem("deepseek_key") || "") : ""
-  );
   const bottom = useRef<HTMLDivElement>(null);
 
   useEffect(() => { bottom.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
@@ -130,14 +125,6 @@ export default function AgentChat({ agent }: { agent: { name: string; role: stri
       return;
     }
 
-    const apiKey = savedKey || (typeof window !== "undefined" ? localStorage.getItem("deepseek_key") : null);
-    if (!apiKey) {
-      setShowSettings(true);
-      setMessages((m) => [...m, { role: "assistant", content: "Add a DeepSeek API key in ⚙ Settings (top-right of this chat) to enable free-form questions. The suggested pills above work offline." }]);
-      setBusy(false);
-      return;
-    }
-
     const hist = [...messages, { role: "user" as const, content: question }];
     try {
       const r = await fetch("/api/agent-chat", {
@@ -145,7 +132,6 @@ export default function AgentChat({ agent }: { agent: { name: string; role: stri
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           messages: hist.map(({ role, content }) => ({ role, content })),
-          api_key: apiKey,
           system: `You are ${activeAgent.name}, the ${activeAgent.role} AI agent for Pretty Fly, a London streetwear brand. You work in the ${activeAgent.dept} department. Keep answers concise, data-driven, and specific to your department. Use GBP (£) currency. Be friendly and direct.`,
         }),
       });
@@ -230,39 +216,10 @@ export default function AgentChat({ agent }: { agent: { name: string; role: stri
             <span style={{ fontSize: 24 }}>{activeAgent.icon}</span>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 14, fontWeight: 800, letterSpacing: "-.2px", color: activeAgent.color }}>{activeAgent.name}</div>
-              <div style={{ fontSize: 10, color: "var(--t3)" }}>{activeAgent.role}{savedKey ? " · DeepSeek connected" : ""}</div>
+              <div style={{ fontSize: 10, color: "var(--t3)" }}>{activeAgent.role} · Claude</div>
             </div>
-            <button className="chip" title="DeepSeek API key" onClick={() => setShowSettings((s) => !s)}
-              style={{ fontSize: 12, padding: "5px 9px", borderColor: savedKey ? "rgba(48,209,88,.4)" : undefined }}>
-              {savedKey ? "✓ Key" : "⚙ Key"}
-            </button>
             <button className="chip" onClick={() => setOpen(false)} style={{ fontSize: 16 }}>✕</button>
           </div>
-
-          {/* settings panel */}
-          {showSettings && (
-            <div style={{ padding: "10px 14px", borderBottom: "1px solid var(--bh)", background: "rgba(255,255,255,.02)" }}>
-              <div style={{ fontSize: 11, color: "var(--t3)", marginBottom: 6 }}>
-                DeepSeek API key — enables free-form questions. Get one at{" "}
-                <a href="https://platform.deepseek.com" target="_blank" rel="noreferrer" style={{ color: "var(--bl)" }}>platform.deepseek.com</a>.
-              </div>
-              <div style={{ display: "flex", gap: 6 }}>
-                <input
-                  type="password" value={keyInput} onChange={(e) => setKeyInput(e.target.value)}
-                  placeholder={savedKey ? "••••••••••• (saved)" : "sk-…"}
-                  style={{ flex: 1, background: "rgba(255,255,255,.04)", border: "1px solid var(--bh)", borderRadius: 8,
-                    padding: "7px 10px", fontSize: 12, color: "var(--t)", fontFamily: "inherit", outline: "none" }}
-                />
-                <button className="btn primary" style={{ padding: "6px 12px", fontSize: 12 }} onClick={() => {
-                  const k = keyInput.trim();
-                  if (k) { localStorage.setItem("deepseek_key", k); setSavedKey(k); setKeyInput(""); setShowSettings(false); }
-                }}>Save</button>
-                {savedKey && <button className="btn" style={{ padding: "6px 10px", fontSize: 12 }} onClick={() => {
-                  localStorage.removeItem("deepseek_key"); setSavedKey(""); setKeyInput(""); setShowSettings(false);
-                }}>Clear</button>}
-              </div>
-            </div>
-          )}
 
           {/* messages */}
           <div style={{ flex: 1, overflowY: "auto", padding: "12px 14px", display: "flex", flexDirection: "column", gap: 10, maxHeight: 240 }}>

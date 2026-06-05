@@ -177,29 +177,30 @@ def agent_ep():
 
 @app.post("/api/agent-chat")
 def agent_chat_ep():
-    import requests as _requests
+    """Chat with an AI agent using the server-side Anthropic key."""
+    import anthropic as _anthropic
     body = request.get_json(force=True, silent=True) or {}
     messages = body.get("messages", [])
-    api_key = body.get("api_key", "")
     system_prompt = body.get("system", "")
-    if not api_key or not messages:
-        return jsonify({"error": "missing api_key or messages"}), 400
-    full = []
-    if system_prompt:
-        full.append({"role": "system", "content": system_prompt})
-    full.extend(messages)
+    if not messages:
+        return jsonify({"error": "missing messages"}), 400
+    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    if not api_key:
+        return jsonify({"error": "ANTHROPIC_API_KEY not configured on server"}), 503
+    # Strip any system messages from the array (Claude uses the system param instead)
+    chat_msgs = [m for m in messages if m.get("role") in ("user", "assistant")]
     try:
-        resp = _requests.post(
-            "https://api.deepseek.com/v1/chat/completions",
-            json={"model": "deepseek-chat", "messages": full, "max_tokens": 1024},
-            headers={"Authorization": f"Bearer {api_key}"},
-            timeout=30,
+        client = _anthropic.Anthropic(api_key=api_key)
+        resp = client.messages.create(
+            model="claude-sonnet-4-6",
+            max_tokens=1024,
+            system=system_prompt or "You are a helpful AI agent for Pretty Fly, a London streetwear brand.",
+            messages=chat_msgs,
         )
-        resp.raise_for_status()
-        content = resp.json()["choices"][0]["message"]["content"]
+        content = resp.content[0].text
         return jsonify({"content": content})
-    except _requests.exceptions.HTTPError as e:
-        return jsonify({"error": f"DeepSeek API error: {e.response.status_code}"}), 502
+    except _anthropic.APIError as e:
+        return jsonify({"error": f"Claude API error: {e}"}), 502
     except Exception as e:
         return jsonify({"error": str(e)}), 502
 
