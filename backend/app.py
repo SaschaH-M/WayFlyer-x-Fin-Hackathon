@@ -177,16 +177,7 @@ def agent_ep():
 
 @app.post("/api/agent-chat")
 def agent_chat_ep():
-    import json as _json
-    try:
-        from urllib.request import Request, urlopen
-    except Exception:
-        from urllib.request import Request as _Req, urlopen as _urlopen
-        Request, urlopen = _Req, _urlopen
-    import ssl
-    ctx = ssl.create_default_context()
-    ctx.check_hostname = False
-    ctx.verify_mode = ssl.CERT_NONE
+    import requests as _requests
     body = request.get_json(force=True, silent=True) or {}
     messages = body.get("messages", [])
     api_key = body.get("api_key", "")
@@ -197,16 +188,18 @@ def agent_chat_ep():
     if system_prompt:
         full.append({"role": "system", "content": system_prompt})
     full.extend(messages)
-    req = Request(
-        "https://api.deepseek.com/v1/chat/completions",
-        data=_json.dumps({"model": "deepseek-chat", "messages": full, "max_tokens": 1024}).encode(),
-        headers={"Content-Type": "application/json", "Authorization": f"Bearer {api_key}"},
-    )
     try:
-        resp = urlopen(req, timeout=30, context=ctx)
-        data = _json.loads(resp.read().decode())
-        content = data["choices"][0]["message"]["content"]
+        resp = _requests.post(
+            "https://api.deepseek.com/v1/chat/completions",
+            json={"model": "deepseek-chat", "messages": full, "max_tokens": 1024},
+            headers={"Authorization": f"Bearer {api_key}"},
+            timeout=30,
+        )
+        resp.raise_for_status()
+        content = resp.json()["choices"][0]["message"]["content"]
         return jsonify({"content": content})
+    except _requests.exceptions.HTTPError as e:
+        return jsonify({"error": f"DeepSeek API error: {e.response.status_code}"}), 502
     except Exception as e:
         return jsonify({"error": str(e)}), 502
 
