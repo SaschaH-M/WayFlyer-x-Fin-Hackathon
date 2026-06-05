@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StockSense Cash Radar — Pretty Fly</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#000;--bg2:rgba(28,28,30,.6);--bg3:rgba(28,28,30,.85);
+    --b:rgba(255,255,255,.06);--bh:rgba(255,255,255,.14);
+    --t:#f5f5f7;--t2:#98989d;--t3:#6e6e73;
+    --bl:#0a84ff;--gr:#30d158;--rd:#ff453a;--am:#ff9f0a;--pu:#bf5af2;--pk:#ff375f;
+  }
+  body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg);color:var(--t);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+
+  .topbar{position:sticky;top:0;z-index:100;background:rgba(0,0,0,.82);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);border-bottom:1px solid var(--b);padding:14px 24px}
+  .tb-inner{max-width:1500px;margin:0 auto;display:flex;align-items:center;gap:24px;flex-wrap:wrap}
+  .logo{font-size:20px;font-weight:800;letter-spacing:-.5px;white-space:nowrap}
+  .logo span.ss{color:var(--gr)}
+  .logo span.pf{color:var(--bl)}
+  .nav-links{display:flex;gap:14px;margin-left:auto;font-size:12px}
+  .nav-links a{color:var(--t2);text-decoration:none;padding:6px 12px;border-radius:14px;border:1px solid var(--b);transition:all .2s}
+  .nav-links a:hover{color:var(--t);border-color:var(--bh)}
+  .nav-links a.active{background:var(--bl);border-color:var(--bl);color:#fff}
+
+  .container{max-width:1500px;margin:0 auto;padding:24px}
+
+  /* Hero headline */
+  .hero{margin-bottom:24px;padding:28px;background:linear-gradient(135deg,rgba(255,69,58,.07),rgba(255,159,10,.04));border:1px solid rgba(255,69,58,.18);border-radius:18px}
+  .hero .eyebrow{font-size:11px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--rd);margin-bottom:10px}
+  .hero h1{font-size:34px;font-weight:800;letter-spacing:-.8px;line-height:1.15;margin-bottom:8px}
+  .hero h1 .num{color:var(--rd);font-variant-numeric:tabular-nums}
+  .hero .sub{font-size:14px;color:var(--t2);line-height:1.55;max-width:900px}
+  .hero .sub b{color:var(--t)}
+
+  /* Chart card */
+  .chart-card{background:var(--bg2);border:1px solid var(--b);border-radius:18px;padding:24px;margin-bottom:20px;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+  .chart-head{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:12px}
+  .chart-head .title{font-size:12px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:1.5px}
+  .chart-head .legend{display:flex;gap:18px;font-size:11px;color:var(--t2)}
+  .legend .lk{display:inline-flex;align-items:center;gap:6px}
+  .legend .swatch{width:24px;height:2px;display:inline-block;background:var(--t)}
+  .legend .swatch.proj{background:repeating-linear-gradient(90deg,var(--rd) 0,var(--rd) 4px,transparent 4px,transparent 8px);height:2px}
+  .legend .swatch.remedy{background:repeating-linear-gradient(90deg,var(--gr) 0,var(--gr) 4px,transparent 4px,transparent 8px);height:2px}
+  .chart-box{position:relative;width:100%;height:340px}
+  .chart-box canvas{width:100% !important;height:100% !important}
+
+  /* Scrubber */
+  .scrub{display:flex;gap:16px;align-items:center;margin-top:18px;flex-wrap:wrap}
+  .scrub input[type=range]{flex:1;min-width:200px;height:6px;accent-color:var(--bl);cursor:pointer}
+  .scrub-controls{display:flex;gap:8px;align-items:center}
+  .btn{font-family:inherit;font-size:12px;font-weight:600;padding:7px 14px;border-radius:14px;border:1px solid var(--b);background:transparent;color:var(--t);cursor:pointer;transition:all .15s;white-space:nowrap}
+  .btn:hover{background:rgba(255,255,255,.06);border-color:var(--bh)}
+  .btn.primary{background:var(--bl);border-color:var(--bl);color:#fff}
+  .btn.primary:hover{background:#0070dc}
+  .btn.danger{background:var(--rd);border-color:var(--rd);color:#fff}
+  .btn.danger:hover{background:#e03b30}
+  .scrub-date{font-size:14px;font-weight:700;color:var(--t);font-variant-numeric:tabular-nums;min-width:115px;text-align:center}
+
+  /* Status row */
+  .status-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:16px}
+  .status-cell{background:rgba(255,255,255,.025);border:1px solid var(--b);border-radius:12px;padding:14px 16px}
+  .status-cell .lbl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin-bottom:4px}
+  .status-cell .val{font-size:22px;font-weight:700;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
+  .status-cell.danger .val{color:var(--rd)}
+  .status-cell.warn .val{color:var(--am)}
+  .status-cell.ok .val{color:var(--gr)}
+  .status-cell .sub{font-size:11px;color:var(--t3);margin-top:2px}
+
+  /* Danger banner */
+  .danger-banner{padding:20px 24px;border-radius:14px;margin-top:20px;border-left:3px solid var(--rd);background:rgba(255,69,58,.08);display:none}
+  .danger-banner.show{display:block}
+  .danger-banner.ok{background:rgba(48,209,88,.08);border-left-color:var(--gr)}
+  .danger-banner .b-title{font-size:18px;font-weight:700;letter-spacing:-.3px;margin-bottom:6px}
+  .danger-banner.ok .b-title{color:var(--gr)}
+  .danger-banner .b-sub{font-size:13px;color:var(--t2);line-height:1.55}
+  .danger-banner .drivers{margin-top:14px;display:grid;gap:6px}
+  .driver{display:grid;grid-template-columns:90px 1fr 110px;gap:10px;align-items:center;font-size:12px;padding:7px 12px;background:rgba(255,255,255,.025);border-radius:8px}
+  .driver .ddate{font-variant-numeric:tabular-nums;color:var(--t3);font-weight:600}
+  .driver .dlabel{color:var(--t2)}
+  .driver .damt{text-align:right;font-weight:700;color:var(--rd);font-variant-numeric:tabular-nums}
+  .driver .damt.pos{color:var(--gr)}
+
+  /* Remedy cards */
+  .remedies{margin-top:22px}
+  .remedies .r-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:var(--t3);margin-bottom:12px}
+  .remedy-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .remedy{background:var(--bg3);border:1px solid var(--b);border-radius:16px;padding:20px;transition:all .2s;cursor:pointer;position:relative;overflow:hidden}
+  .remedy:hover{border-color:var(--bh);transform:translateY(-1px)}
+  .remedy.active{border-color:var(--gr);box-shadow:0 0 0 1px var(--gr)}
+  .remedy .r-tag{display:inline-block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin-bottom:8px}
+  .remedy .r-head{font-size:16px;font-weight:700;letter-spacing:-.2px;line-height:1.25;margin-bottom:10px}
+  .remedy .r-impact{display:flex;gap:18px;margin:14px 0;flex-wrap:wrap}
+  .remedy .r-impact .rk{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.5px}
+  .remedy .r-impact .rk span{display:block;font-size:18px;font-weight:700;color:var(--t);margin-top:2px;font-variant-numeric:tabular-nums}
+  .remedy .r-impact .rk span.good{color:var(--gr)}
+  .remedy .r-impact .rk span.warn{color:var(--am)}
+  .remedy .r-detail{font-size:12px;color:var(--t2);line-height:1.55;margin-bottom:10px}
+  .remedy .r-source{font-size:10.5px;line-height:1.5;color:var(--t3);background:rgba(255,255,255,.025);border:1px solid var(--b);border-radius:8px;padding:8px 10px;margin-bottom:12px;font-family:'SF Mono',ui-monospace,Menlo,Consolas,monospace}
+  .remedy .r-source b{color:var(--t2);font-weight:600}
+  .remedy .r-cta{display:flex;gap:8px;flex-wrap:wrap}
+  .remedy.A{border-left:3px solid var(--bl)}
+  .remedy.B{border-left:3px solid var(--am)}
+  .remedy.C{border-left:3px solid var(--pu)}
+  .remedy.A .r-tag{color:var(--bl)}
+  .remedy.B .r-tag{color:var(--am)}
+  .remedy.C .r-tag{color:var(--pu)}
+
+  /* Footnote */
+  footer{max-width:1500px;margin:30px auto;padding:24px;border-top:1px solid var(--b);color:var(--t3);font-size:11px;line-height:1.6}
+  footer b{color:var(--t2)}
+
+  @media(max-width:900px){
+    .status-row{grid-template-columns:repeat(2,1fr)}
+    .remedy-grid{grid-template-columns:1fr}
+    .hero h1{font-size:24px}
+    .chart-box{height:240px}
+  }
+</style>
+<script src="chart.min.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js'"></script>
+<script src="cash_radar_data.js"></script>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="tb-inner">
+    <div class="logo">Stock<span class="ss">Sense</span> · <span class="pf">Cash Radar</span></div>
+    <div style="font-size:12px;color:var(--t3)">Pretty Fly · 24 months · GBP</div>
+    <button class="btn danger" onclick="jumpTo('primary')" style="font-size:11px;padding:5px 14px;border-radius:14px;margin-left:auto">⚡ Crisis</button>
+    <div class="nav-links" style="margin-left:0">
+      <a href="index.html" class="active">Cash Radar</a>
+      <a href="stocksense.html">Inventory</a>
+      <a href="womens_insight.html">Growth Insight →</a>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="hero">
+    <div class="eyebrow">The single worst day in 24 months</div>
+    <h1>Pretty Fly's bank balance hit <span class="num" id="hero-nadir">—</span> on <span id="hero-date">—</span>.</h1>
+    <p class="sub">The data already knew, <b>20 days early</b>. Three purchase orders created two months prior were scheduled to clear on 2 September. Drag the timeline to that date — every signal needed to forecast the crisis was visible. Then pick one of three remedies and watch the projection clear.</p>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-head">
+      <div class="title">Bank balance · actuals + 30-day projection from cursor</div>
+      <div class="legend">
+        <span class="lk"><span class="swatch" style="background:#f5f5f7"></span> Actual</span>
+        <span class="lk"><span class="swatch proj"></span> Projection</span>
+        <span class="lk"><span class="swatch remedy"></span> Remedy projection</span>
+      </div>
+    </div>
+    <div class="chart-box"><canvas id="cash-chart"></canvas></div>
+
+    <div class="scrub">
+      <div class="scrub-controls">
+        <button class="btn" onclick="stepDays(-30)">«</button>
+        <button class="btn" onclick="stepDays(-1)">‹</button>
+      </div>
+      <input type="range" id="scrubber" min="0" max="730" value="0" oninput="onScrubInput()">
+      <div class="scrub-controls">
+        <button class="btn" onclick="stepDays(1)">›</button>
+        <button class="btn" onclick="stepDays(30)">»</button>
+      </div>
+      <div class="scrub-date" id="scrub-date">—</div>
+      <button class="btn danger" onclick="jumpTo('primary')">Jump to crisis</button>
+    </div>
+
+    <div class="status-row" id="status-row">
+      <div class="status-cell"><div class="lbl">As-of balance</div><div class="val" id="st-asof">—</div><div class="sub" id="st-asof-sub">—</div></div>
+      <div class="status-cell" id="st-proj-cell"><div class="lbl">30-day projected low</div><div class="val" id="st-proj">—</div><div class="sub" id="st-proj-sub">—</div></div>
+      <div class="status-cell"><div class="lbl">Status</div><div class="val" id="st-status">—</div><div class="sub" id="st-status-sub">—</div></div>
+      <div class="status-cell"><div class="lbl">Days of forewarning</div><div class="val" id="st-warn">—</div><div class="sub">to projected nadir</div></div>
+    </div>
+  </div>
+
+  <div class="danger-banner" id="danger-banner">
+    <div class="b-title" id="db-title">—</div>
+    <div class="b-sub" id="db-sub">—</div>
+    <div class="drivers" id="db-drivers"></div>
+  </div>
+
+  <div class="remedies" id="remedies" style="display:none">
+    <div class="r-title">Three ways to clear it</div>
+    <div class="remedy-grid">
+      <div class="remedy A" id="rem-A">
+        <div class="r-tag">A · Delay a PO</div>
+        <div class="r-head" id="rA-head">—</div>
+        <div class="r-detail" id="rA-detail">—</div>
+        <div class="r-impact">
+          <div class="rk">New projected low<span id="rA-newmin" class="good">—</span></div>
+          <div class="rk">Relief<span id="rA-relief">—</span></div>
+        </div>
+        <div class="r-source" id="rA-source">—</div>
+        <div class="r-cta">
+          <button class="btn primary" onclick="applyRemedy('A')">Apply A</button>
+          <button class="btn" onclick="resetRemedy()">Reset</button>
+        </div>
+      </div>
+      <div class="remedy B" id="rem-B">
+        <div class="r-tag">B · Discount overstock</div>
+        <div class="r-head" id="rB-head">—</div>
+        <div class="r-detail" id="rB-detail">—</div>
+        <div class="r-impact">
+          <div class="rk">New projected low<span id="rB-newmin" class="good">—</span></div>
+          <div class="rk">Cash freed<span id="rB-freed">—</span></div>
+        </div>
+        <div class="r-source" id="rB-source">—</div>
+        <div class="r-cta">
+          <button class="btn primary" onclick="applyRemedy('B')">Apply B</button>
+          <button class="btn" id="rB-drill" onclick="drillToStockSense()">Drill into SKUs →</button>
+        </div>
+      </div>
+      <div class="remedy C" id="rem-C">
+        <div class="r-tag">C · Wayflyer bridge</div>
+        <div class="r-head" id="rC-head">—</div>
+        <div class="r-detail" id="rC-detail">—</div>
+        <div class="r-impact">
+          <div class="rk">New projected low<span id="rC-newmin" class="good">—</span></div>
+          <div class="rk">All-in fee<span id="rC-fee" class="warn">—</span></div>
+        </div>
+        <div class="r-source" id="rC-source">—</div>
+        <div class="r-cta">
+          <button class="btn primary" onclick="applyRemedy('C')">Apply C</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  Built on 24 months of Pretty Fly transaction data — 560 bank rows, 21 purchase orders, 645 variants. <br>
+  Actual nadir of <b>-£274,113.93 on 3 Sep 2024</b> verified end-of-day from <code>bank_transactions.csv</code>. Projection from <b>14 Aug 2024</b>
+  reproduces it within <b>5%</b> using only data the operator could have seen that day — known PO schedules + 8-week trailing payout average + 3-month trailing recurring outflows.
+  Remedy B uses as-of overstock from <code>inventory_movements.running_balance</code> at the anchor date.
+</footer>
+
+<script>
+// ─────────────────────────────────────────────────────────────────
+// Cash Radar UI controller
+// ─────────────────────────────────────────────────────────────────
+
+let CR = window.CASH_RADAR;
+let chart = null;
+let appliedRemedy = null; // null | "A" | "B" | "C"
+let currentAnchorIdx = 0; // index into CR.anchors_summary
+let lastDemoAnchor = null; // currently-selected demo_anchor object, if any
+
+const NF = new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 });
+function fmt(n) { return NF.format(n).replace('£','£'); }
+function fmtSigned(n) { return (n>=0 ? '+' : '') + NF.format(n); }
+function fmtDate(s){ const d = new Date(s); return d.toLocaleDateString('en-GB', {day:'numeric', month:'short', year:'numeric'}); }
+function fmtDateShort(s){ const d = new Date(s); return d.toLocaleDateString('en-GB', {day:'numeric', month:'short'}); }
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// Map asof_date -> index in anchors_summary
+const anchorIndexByDate = {};
+CR.anchors_summary.forEach((a, i) => { anchorIndexByDate[a.date] = i; });
+
+// Map date -> index in actual_balance_series
+const actualIndexByDate = {};
+CR.actual_balance_series.forEach((p, i) => { actualIndexByDate[p.date] = i; });
+
+// Map asof_date -> demo_anchor object (for full danger detail + remedies)
+const demoAnchorByDate = {};
+CR.demo_anchors.forEach(d => { demoAnchorByDate[d.anchor_date] = d; });
+
+// All labels = actual series dates
+const ALL_LABELS = CR.actual_balance_series.map(p => p.date);
+const ACTUAL_BAL = CR.actual_balance_series.map(p => p.balance);
+
+// ── Hero with verified actual nadir ──
+document.getElementById('hero-nadir').textContent = fmt(CR.meta.actual_nadir_gbp);
+document.getElementById('hero-date').textContent = fmtDate(CR.meta.actual_nadir_date);
+
+// ── Scrubber bounds: only anchor_summary dates (skip first 14 days where we don't compute projections) ──
+const SCRUB_MIN = actualIndexByDate[CR.anchors_summary[0].date];
+const SCRUB_MAX = actualIndexByDate[CR.anchors_summary[CR.anchors_summary.length - 1].date];
+const scrubber = document.getElementById('scrubber');
+scrubber.min = SCRUB_MIN;
+scrubber.max = SCRUB_MAX;
+
+// Plugin: draw a vertical cursor at the "today" position + a shaded projection window
+const cursorPlugin = {
+  id: 'cursorWindow',
+  afterDatasetsDraw(chart) {
+    if (cursorIdx == null) return;
+    const xScale = chart.scales.x;
+    const yScale = chart.scales.y;
+    const xCursor = xScale.getPixelForValue(cursorIdx);
+    const xEnd = xScale.getPixelForValue(Math.min(cursorIdx + 30, ALL_LABELS.length - 1));
+    const top = yScale.top, bottom = yScale.bottom;
+    const ctx = chart.ctx;
+    // Shaded 30-day projection window
+    ctx.save();
+    ctx.fillStyle = cursorIsDanger ? 'rgba(255,69,58,0.06)' : 'rgba(10,132,255,0.04)';
+    ctx.fillRect(xCursor, top, xEnd - xCursor, bottom - top);
+    // Vertical cursor line
+    ctx.strokeStyle = '#0a84ff';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([3,3]);
+    ctx.beginPath();
+    ctx.moveTo(xCursor, top);
+    ctx.lineTo(xCursor, bottom);
+    ctx.stroke();
+    // "Today" label
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#0a84ff';
+    ctx.font = '11px Inter';
+    ctx.fillText('today', xCursor + 6, top + 14);
+    ctx.restore();
+  }
+};
+let cursorIdx = null;
+let cursorIsDanger = false;
+
+function buildChart() {
+  const ctx = document.getElementById('cash-chart').getContext('2d');
+  chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: ALL_LABELS,
+      datasets: [
+        {
+          label: 'Actual balance',
+          data: ACTUAL_BAL,
+          borderColor: '#f5f5f7',
+          backgroundColor: 'rgba(245,245,247,0.06)',
+          borderWidth: 1.6,
+          pointRadius: 0,
+          tension: 0.15,
+          fill: true,
+          order: 3
+        },
+        {
+          label: '30-day projection',
+          data: Array(ALL_LABELS.length).fill(null),
+          borderColor: '#ff453a',
+          backgroundColor: 'transparent',
+          borderWidth: 2.5,
+          pointRadius: 0,
+          tension: 0.1,
+          fill: false,
+          borderDash: [5,4],
+          order: 1
+        },
+        {
+          label: 'Remedy projection',
+          data: Array(ALL_LABELS.length).fill(null),
+          borderColor: '#30d158',
+          backgroundColor: 'transparent',
+          borderWidth: 2.5,
+          pointRadius: 0,
+          tension: 0.1,
+          fill: false,
+          borderDash: [5,4],
+          order: 0
+        }
+      ]
+    },
+    plugins: [cursorPlugin],
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          mode: 'index',
+          intersect: false,
+          backgroundColor: 'rgba(28,28,30,0.95)',
+          titleColor: '#f5f5f7',
+          bodyColor: '#98989d',
+          borderColor: 'rgba(255,255,255,0.1)',
+          borderWidth: 1,
+          padding: 12,
+          callbacks: {
+            title: (items) => fmtDate(items[0].label),
+            label: (ctx) => {
+              if (ctx.parsed.y === null) return null;
+              return ctx.dataset.label + ': ' + fmt(ctx.parsed.y);
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          ticks: { color: '#6e6e73', font: { size: 10 }, maxTicksLimit: 12,
+                   callback: function(v, i) {
+                     const d = ALL_LABELS[i];
+                     if (!d) return '';
+                     // Show only month starts
+                     if (d.endsWith('-01')) return new Date(d).toLocaleDateString('en-GB', {month:'short', year:'2-digit'});
+                     return '';
+                   } },
+          grid: { color: 'rgba(255,255,255,0.03)' }
+        },
+        y: {
+          ticks: { color: '#6e6e73', font: { size: 10 },
+                   callback: (v) => fmt(v).replace('.00','') },
+          grid: { color: 'rgba(255,255,255,0.04)' }
+        }
+      }
+    }
+  });
+}
+
+function setScrubToDate(dateStr) {
+  const idx = actualIndexByDate[dateStr];
+  if (idx === undefined) return;
+  scrubber.value = idx;
+  render();
+}
+
+function stepDays(delta) {
+  let v = parseInt(scrubber.value) + delta;
+  v = Math.max(SCRUB_MIN, Math.min(SCRUB_MAX, v));
+  scrubber.value = v;
+  render();
+}
+
+function onScrubInput() {
+  appliedRemedy = null;
+  render();
+}
+
+function jumpTo(which) {
+  if (which === 'primary') {
+    setScrubToDate(CR.meta.primary_anchor);
+  }
+}
+
+function applyRemedy(letter) {
+  if (!lastDemoAnchor) return;
+  appliedRemedy = letter;
+  render();
+}
+
+function resetRemedy() {
+  appliedRemedy = null;
+  render();
+}
+
+function drillToStockSense() {
+  if (!lastDemoAnchor) return;
+  const ids = lastDemoAnchor.remedies.B.variants.map(v => v.variant_id).join(',');
+  window.location.href = 'stocksense.html?ids=' + encodeURIComponent(ids);
+}
+
+function render() {
+  const idx = parseInt(scrubber.value);
+  const dateStr = ALL_LABELS[idx];
+  document.getElementById('scrub-date').textContent = fmtDate(dateStr);
+
+  // Lookup anchor summary for this date
+  const anchorSum = CR.anchors_summary[anchorIndexByDate[dateStr]];
+  if (!anchorSum) {
+    return;
+  }
+
+  // Projection line: positioned at idx+1 ... idx+30 with balances from projections_thin
+  const projBalances = CR.projections_thin[dateStr] || [];
+  const projData = Array(ALL_LABELS.length).fill(null);
+  // Anchor point = actual balance at scrubber position, so the line joins visually
+  projData[idx] = anchorSum.asof_balance;
+  for (let i = 0; i < projBalances.length; i++) {
+    const slotIdx = idx + 1 + i;
+    if (slotIdx < ALL_LABELS.length) projData[slotIdx] = projBalances[i];
+  }
+  chart.data.datasets[1].data = projData;
+
+  // Remedy line (if applied)
+  const remedyData = Array(ALL_LABELS.length).fill(null);
+  lastDemoAnchor = demoAnchorByDate[dateStr] || null;
+  if (lastDemoAnchor && appliedRemedy && lastDemoAnchor.remedies[appliedRemedy]) {
+    const newBals = lastDemoAnchor.remedies[appliedRemedy].new_balances || [];
+    remedyData[idx] = anchorSum.asof_balance;
+    for (let i = 0; i < newBals.length; i++) {
+      const slotIdx = idx + 1 + i;
+      if (slotIdx < ALL_LABELS.length) remedyData[slotIdx] = newBals[i];
+    }
+  }
+  chart.data.datasets[2].data = remedyData;
+
+  cursorIdx = idx;
+  cursorIsDanger = anchorSum.is_danger;
+  chart.update('none');
+
+  // ── Status row ──
+  document.getElementById('st-asof').textContent = fmt(anchorSum.asof_balance);
+  document.getElementById('st-asof-sub').textContent = 'End-of-day, ' + fmtDateShort(dateStr);
+
+  document.getElementById('st-proj').textContent = fmt(anchorSum.min_projected);
+  document.getElementById('st-proj-sub').textContent = 'on ' + fmtDate(anchorSum.min_date);
+
+  const projCell = document.getElementById('st-proj-cell');
+  projCell.classList.remove('danger', 'warn', 'ok');
+  if (anchorSum.min_projected < CR.meta.danger_threshold) projCell.classList.add('danger');
+  else if (anchorSum.min_projected < 0) projCell.classList.add('warn');
+  else projCell.classList.add('ok');
+
+  const statusEl = document.getElementById('st-status');
+  const statusSub = document.getElementById('st-status-sub');
+  if (anchorSum.is_danger) {
+    statusEl.textContent = 'DANGER';
+    statusEl.style.color = 'var(--rd)';
+    statusSub.textContent = 'Below danger threshold';
+  } else if (anchorSum.min_projected < 0) {
+    statusEl.textContent = 'WATCH';
+    statusEl.style.color = 'var(--am)';
+    statusSub.textContent = 'Projection runs negative';
+  } else {
+    statusEl.textContent = 'CLEAR';
+    statusEl.style.color = 'var(--gr)';
+    statusSub.textContent = 'No immediate threats';
+  }
+
+  const daysFwd = Math.round((new Date(anchorSum.min_date) - new Date(dateStr)) / 86400000);
+  document.getElementById('st-warn').textContent = daysFwd + 'd';
+
+  // ── Danger banner + remedies ──
+  const banner = document.getElementById('danger-banner');
+  const remediesEl = document.getElementById('remedies');
+
+  if (lastDemoAnchor) {
+    // Full danger detail available
+    banner.classList.add('show');
+    banner.classList.remove('ok');
+    const da = lastDemoAnchor;
+    document.getElementById('db-title').textContent =
+      '⚠ Cash projected ' + fmt(da.min_balance) + ' on ' + fmtDate(da.min_date)
+      + ' — ' + da.days_forewarned + ' days from now';
+    document.getElementById('db-sub').textContent =
+      "If nothing changes, you'll hit a new 30-day low driven by these scheduled outflows:";
+    const drv = document.getElementById('db-drivers');
+    drv.innerHTML = da.danger_drivers.slice(0, 5).map(d =>
+      '<div class="driver">'
+      + '<div class="ddate">' + fmtDateShort(d.date) + '</div>'
+      + '<div class="dlabel">' + esc(d.label) + '</div>'
+      + '<div class="damt">' + fmt(d.amount) + '</div>'
+      + '</div>'
+    ).join('');
+
+    // Remedy A
+    const A = da.remedies.A;
+    if (A) {
+      document.getElementById('rA-head').textContent = A.headline;
+      document.getElementById('rA-detail').textContent = A.detail;
+      document.getElementById('rA-newmin').textContent = fmt(A.new_min_balance);
+      document.getElementById('rA-relief').textContent = '+' + fmt(A.amount_gbp).replace('-','');
+      document.getElementById('rA-source').innerHTML =
+        '<b>Formula:</b> defer scheduled PO balance by ' + A.delay_days + ' days · '
+        + '<b>Source:</b> <code>purchase_orders.csv</code> ' + A.po_id
+        + ' · <b>Assumes:</b> supplier accepts extension (50/50 EU terms, typical 1–2% fee).';
+    }
+    // Remedy B
+    const B = da.remedies.B;
+    if (B) {
+      document.getElementById('rB-head').textContent = B.headline;
+      document.getElementById('rB-detail').textContent = B.detail;
+      document.getElementById('rB-newmin').textContent = fmt(B.new_min_balance);
+      document.getElementById('rB-freed').textContent = '+' + fmt(B.freed_gbp);
+      document.getElementById('rB-source').innerHTML =
+        '<b>Formula:</b> Σ(units × discounted price × sell-through) = '
+        + 'Σ(inv × price × ' + ((100-B.discount_pct)/100).toFixed(2)
+        + ' × ' + (B.sell_through_pct/100).toFixed(2) + ') across '
+        + B.variant_count + ' SKUs (top ' + B.variants.length + ' shown in Inventory drill-through) · '
+        + '<b>Source:</b> <code>inventory_movements</code>, <code>variants.price</code>, <code>po_line_items</code> · '
+        + '<b>Gross of</b> VAT (20% inclusive, quarterly), Shopify fees (~2.5%), returns (~9%). '
+        + '<b>Net-of-deductions ≈' + fmt(Math.round(B.freed_gbp / 1.20 * 0.975 * 0.91))
+        + '</b> (÷1.20 VAT · ×0.975 fees · ×0.91 returns).';
+    }
+    // Remedy C
+    const C = da.remedies.C;
+    if (C) {
+      document.getElementById('rC-head').textContent = C.headline;
+      document.getElementById('rC-detail').textContent = C.detail;
+      document.getElementById('rC-newmin').textContent = fmt(C.new_min_balance);
+      document.getElementById('rC-fee').textContent = '-' + fmt(C.fee_gbp);
+      document.getElementById('rC-source').innerHTML =
+        '<b>Formula:</b> principal × ' + C.apr_pct + '% APR × ' + C.term_days + '/365 = '
+        + fmt(C.fee_gbp) + ' (simple interest) · '
+        + '<b>Equivalent:</b> ' + (C.apr_pct * C.term_days / 365).toFixed(1) + '% flat over '
+        + C.term_days + ' days (within Wayflyer 4–15% flat range) · '
+        + '<b>Note:</b> repayment falls outside the 30-day projection horizon.';
+    }
+
+    remediesEl.style.display = 'block';
+    document.querySelectorAll('.remedy').forEach(el => el.classList.remove('active'));
+    if (appliedRemedy) {
+      document.getElementById('rem-' + appliedRemedy).classList.add('active');
+      // Flip banner green when remedy applied + new min is above threshold
+      const newMin = da.remedies[appliedRemedy].new_min_balance;
+      if (newMin > CR.meta.danger_threshold) {
+        banner.classList.add('ok');
+        document.getElementById('db-title').textContent =
+          '✓ Remedy ' + appliedRemedy + ' applied — projected low now ' + fmt(newMin)
+          + ' on ' + fmtDate(da.min_date);
+        document.getElementById('db-sub').textContent =
+          "The danger zone clears. Drag the cursor to confirm the green line stays above the threshold across the 30-day window.";
+      }
+    }
+  } else if (anchorSum.is_danger) {
+    // Danger flagged but no full remedy detail at this date
+    banner.classList.add('show');
+    banner.classList.remove('ok');
+    document.getElementById('db-title').textContent =
+      '⚠ Cash projected ' + fmt(anchorSum.min_projected) + ' on ' + fmtDate(anchorSum.min_date);
+    document.getElementById('db-sub').textContent =
+      'Drag to ' + fmtDate(CR.meta.primary_anchor) + ' for the full driver list and remedy options for the worst day in the dataset.';
+    document.getElementById('db-drivers').innerHTML = '';
+    remediesEl.style.display = 'none';
+  } else {
+    banner.classList.remove('show');
+    remediesEl.style.display = 'none';
+  }
+}
+
+// ── Init ──
+document.addEventListener('DOMContentLoaded', () => {
+  if (!CR) {
+    document.body.innerHTML = '<p style="color:#ff453a;padding:40px;font-family:Inter">ERROR: cash_radar_data.js failed to load. Run <code>python cash_radar_data.py</code> first.</p>';
+    return;
+  }
+  buildChart();
+  // Open on the primary anchor for instant impact
+  setScrubToDate(CR.meta.primary_anchor);
+  // Optional URL param for demos: ?apply=A|B|C auto-applies a remedy on load
+  const urlApply = new URLSearchParams(window.location.search).get('apply');
+  if (urlApply && ['A','B','C'].includes(urlApply)) {
+    setTimeout(() => applyRemedy(urlApply), 80);
+  }
+});
+</script>
+
+</body>
+</html>
